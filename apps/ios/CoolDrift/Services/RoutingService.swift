@@ -1,13 +1,12 @@
 // RoutingService.swift — plans a "cool route" from A to B.
 //
-// HOW IT WORKS (the trade-off we chose):
-// We don't have a map of every shady walkway in Singapore, so we can't do true
-// "shade-aware" routing. Instead:
+// HOW IT WORKS:
 //   1. Ask a FREE routing server (OSRM, run by the OpenStreetMap community at
-//      routing.openstreetmap.de, no API key) for the normal fastest route.
-//   2. Find cool spots that lie close to the straight line from A to B.
-//   3. Ask OSRM again for a route that goes THROUGH those cool spots (rest stops).
-//   4. If the cool route is much longer (over 50% extra), drop to fewer stops.
+//      routing.openstreetmap.de, no API key) for the fastest route AND its alternatives.
+//   2. Also ask for routes that go THROUGH cool spots near the way (rest stops).
+//   3. Score every candidate with the shade map (ShadeMap: LTA covered walkways +
+//      NParks trees): the more of it in shade, the better, minus a penalty for detours.
+//      Routes more than 50% longer than the fastest are not used.
 // If there is no internet, we draw straight lines and estimate the time ("approximate").
 
 import Foundation
@@ -25,6 +24,7 @@ struct Route {
     var distance: Double // metres
     var duration: Double // seconds
     var steps: [RouteStep] = [] // turn-by-turn directions
+    var viaStops: [CoolSpot] = [] // cool spots the route was asked to pass through
 }
 
 struct CoolRoutePlan {
@@ -32,45 +32,33 @@ struct CoolRoutePlan {
     var cool: Route
     var restStops: [CoolSpot] // places to rest along the cool route
     var coolScore: Int // % of the cool route within 300 m of a cool spot
+    var shade: Int // % of the cool route in shade (roofs and trees)
+    var fastestShade: Int // the same for the fastest route, to compare
     var approximate: Bool // true = offline straight-line estimate
 }
 
 enum RoutingService {
     private static let nearRouteM = 300.0
 
-    /// Asks OSRM for a route through the given points (in order), with turn-by-turn steps.
+    /// Asks OSRM for routes through the given points (in order), with turn-by-turn steps.
     /// `stops` are the cool spots between the start and the end (one per middle point).
-    private static func osrm(_ points: [LatLng], _ mode: TravelMode, stops: [CoolSpot] = []) async throws -> Route {
-        struct Response: Decodable {
-            struct R: Decodable {
-                struct Geometry: Decodable { let coordinates: [[Double]] }
-                struct Leg: Decodable { let steps: [Step] }
-                struct Step: Decodable {
-                    struct Maneuver: Decodable { let type: String; let modifier: String?; let location: [Double] }
-                    let maneuver: Maneuver
-                    let name: String?
-                    let distance: Double
-                }
-                let geometry: Geometry
-                let distance: Double
-                let duration: Double
-                let legs: [Leg]?
-            }
-            let code: String
-            let routes: [R]?
-        }
-
+    /// With `alternatives`, OSRM also sends up to 2 other good routes (only works for A → B).
+    private static func osrm(_ points: [LatLng], _ mode: TravelMode, stops: [CoolSpot] = [], alternatives: Bool = false) async throws -> [Route] {
         let profile = mode == .foot ? "routed-foot" : "routed-bike"
         // OSRM wants "longitude,latitude" pairs separated by ";"
         let coords = points.map { String(format: "%.6f,%.6f", $0.longitude, $0.latitude) }.joined(separator: ";")
-        let url = URL(string: "https://routing.openstreetmap.de/\(profile)/route/v1/driving/\(coords)?overview=full&geometries=geojson&steps=true")!
+        let url = URL(string: "https://routing.openstreetmap.de/\(profile)/route/v1/driving/\(coords)?overview=full&geometries=geojson&steps=true&alternatives=\(alternatives ? 2 : 0)")!
         var request = URLRequest(url: url)
         request.timeoutInterval = 15
 
         let (data, _) = try await URLSession.shared.data(for: request)
-        let res = try JSONDecoder().decode(Response.self, from: data)
-        guard res.code == "Ok", let r = res.routes?.first else { throw URLError(.badServerResponse) }
+        let res = try JSONDecoder().decode(OSRMResponse.self, from: data)
+        guard res.code == "Ok", let routes = res.routes, !routes.isEmpty else { throw URLError(.badServerResponse) }
+        return routes.map { makeRoute($0, stops: stops) }
+    }
 
+    /// Turns one OSRM route into our Route, with turn-by-turn steps.
+    private static func makeRoute(_ r: OSRMResponse.R, stops: [CoolSpot]) -> Route {
         // Join the legs (start → stop 1 → stop 2 → end) into one list of steps.
         // Arriving at a middle point becomes a "Rest stop" step; leaving it again is skipped.
         var steps: [RouteStep] = []
@@ -96,7 +84,8 @@ enum RoutingService {
             path: r.geometry.coordinates.map { LatLng(latitude: $0[1], longitude: $0[0]) },
             distance: r.distance,
             duration: r.duration,
-            steps: steps
+            steps: steps,
+            viaStops: stops
         )
     }
 
@@ -110,7 +99,7 @@ enum RoutingService {
             steps.append(RouteStep(kind: .rest(stop), road: "", location: stop.location, distance: legs[i + 1]))
         }
         steps.append(RouteStep(kind: .arrive, road: "", location: points[points.count - 1], distance: 0))
-        return Route(path: points, distance: distance, duration: distance / mode.speed, steps: steps)
+        return Route(path: points, distance: distance, duration: distance / mode.speed, steps: steps, viaStops: stops)
     }
 
     /// Picks cool spots between A and B. Longer trips get more stops (about one every 1.5 km, max 3).
@@ -139,26 +128,40 @@ enum RoutingService {
         return Int((Double(near) / Double(path.count) * 100).rounded())
     }
 
+    /// How good a candidate is: shade counts most; detours and no rest stops count against it.
+    private static func score(_ r: Route, fastest: Route) -> Double {
+        let detour = max(0, r.distance / max(fastest.distance, 1) - 1) // 0.2 = 20% longer
+        return Double(ShadeMap.percent(r.path)) - 40 * detour + 4 * Double(min(r.viaStops.count, 2))
+    }
+
     /// Plans both the fastest route and the cool route.
     static func plan(from: LatLng, to: LatLng, mode: TravelMode) async -> CoolRoutePlan {
         var stops = chooseStops(from, to)
 
         do {
-            let fastest = try await osrm([from, to], mode)
-            var cool = fastest
+            // The fastest route and OSRM's alternatives...
+            var candidates = try await osrm([from, to], mode, alternatives: true)
+            let fastest = candidates[0]
 
-            // Try with all stops, then fewer, until the detour is acceptable (≤ 50% longer).
+            // ...plus routes through cool spots (all stops, then fewer).
             while !stops.isEmpty {
-                let attempt = try await osrm([from] + stops.map(\.location) + [to], mode, stops: stops)
-                if attempt.distance <= fastest.distance * 1.5 {
-                    cool = attempt
-                    break
+                if let via = try? await osrm([from] + stops.map(\.location) + [to], mode, stops: stops).first {
+                    candidates.append(via)
                 }
                 stops.removeLast()
             }
 
+            // Make sure the shade map has the trees along every candidate (downloads any missing squares).
+            await ShadeMap.prepare(candidates.map(\.path))
+
+            // Pick the best one that's at most 50% longer than the fastest.
+            let cool = candidates
+                .filter { $0.distance <= fastest.distance * 1.5 }
+                .max { score($0, fastest: fastest) < score($1, fastest: fastest) } ?? fastest
+
             // Also list other cool spots the route passes close to (not at the start or
             // the destination). Only the 4 closest, so the list stays short.
+            stops = cool.viaStops
             let chosen = Set(stops.map(\.id))
             let passing = CoolSpots.all
                 .filter { !chosen.contains($0.id) && Geo.distance($0.location, from) > 200 && Geo.distance($0.location, to) > 200 }
@@ -168,12 +171,38 @@ enum RoutingService {
                 .prefix(4)
                 .map(\.spot)
 
-            return CoolRoutePlan(fastest: fastest, cool: cool, restStops: stops + passing, coolScore: coolScore(cool.path), approximate: false)
+            return CoolRoutePlan(
+                fastest: fastest, cool: cool, restStops: stops + passing, coolScore: coolScore(cool.path),
+                shade: ShadeMap.percent(cool.path), fastestShade: ShadeMap.percent(fastest.path), approximate: false
+            )
         } catch {
             // Offline or routing server problem → straight-line estimate.
             let fastest = straightLine([from, to], mode)
             let cool = straightLine([from] + stops.map(\.location) + [to], mode, stops: stops)
-            return CoolRoutePlan(fastest: fastest, cool: cool, restStops: stops, coolScore: coolScore(cool.path), approximate: true)
+            return CoolRoutePlan(
+                fastest: fastest, cool: cool, restStops: stops, coolScore: coolScore(cool.path),
+                shade: ShadeMap.percent(cool.path), fastestShade: ShadeMap.percent(fastest.path), approximate: true
+            )
         }
     }
+}
+
+/// The parts of an OSRM reply we use.
+private nonisolated struct OSRMResponse: Decodable {
+    struct R: Decodable {
+        struct Geometry: Decodable { let coordinates: [[Double]] }
+        struct Leg: Decodable { let steps: [Step] }
+        struct Step: Decodable {
+            struct Maneuver: Decodable { let type: String; let modifier: String?; let location: [Double] }
+            let maneuver: Maneuver
+            let name: String?
+            let distance: Double
+        }
+        let geometry: Geometry
+        let distance: Double
+        let duration: Double
+        let legs: [Leg]?
+    }
+    let code: String
+    let routes: [R]?
 }

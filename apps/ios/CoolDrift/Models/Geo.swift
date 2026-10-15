@@ -4,7 +4,7 @@ import CoreLocation
 import MapKit
 import SwiftUI
 
-struct LatLng: Codable, Hashable {
+nonisolated struct LatLng: Codable, Hashable {
     var latitude: Double
     var longitude: Double
 

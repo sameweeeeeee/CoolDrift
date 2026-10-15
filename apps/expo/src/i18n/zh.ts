@@ -64,6 +64,8 @@ const zh: PartialTranslations = {
     },
   },
   routes: {
+    shade: '%{pct}% 有遮荫',
+    shadeLegend: '绿色 = 有遮荫（有盖走廊、树荫）· 橙色 = 晒太阳',
     tapDestination: '在地图上点击您要去的地方',
     to: '去：%{name}',
     pinned: '已选地点',
@@ -160,6 +162,24 @@ const zh: PartialTranslations = {
   more: {
     soonTitle: '即将推出',
     soon: '更多功能即将推出。',
+    siri: '问 Siri',
+    siriHint: '不用打开应用也能问 Siri。试着说：',
+  },
+  outlook: {
+    title: '今天',
+    bestTime: '最佳外出时间',
+    morning: '现在到上午10点最凉快。上午11点到下午4点最热。',
+    midday: '现在是一天中最热的时候。下午5点后会比较凉快。',
+    evening: '现在比较凉快。明天请在上午10点前出门。',
+    range: '今天 %{low}–%{high}°C',
+    rainLater: '稍后可能有阵雨或雷雨。',
+    nearby: '未来2小时，%{area}：%{text}',
+    uv: '紫外线指数',
+    uvTip: '戴帽子、涂防晒，待在阴凉处。',
+    air: '空气质量（PSI）',
+    airTip: '有烟霾：减少户外时间。老人和小孩应留在室内。',
+    uvLevel: { low: '低', moderate: '中', high: '高', veryHigh: '很高', extreme: '极高' },
+    psiLevel: { good: '良好', moderate: '中等', unhealthy: '不健康', veryUnhealthy: '非常不健康', hazardous: '危险' },
   },
 };
 

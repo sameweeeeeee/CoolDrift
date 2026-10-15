@@ -125,6 +125,7 @@ xcodegen generate
 - Shows the live numbers (feels like, heat stress, temperature, humidity), the safety tips for the current level, and the **nearest Air-con, Shaded and Green place**. Tap one for a cool route.
 - **Read aloud** speaks the advice using the phone's own voice.
 - Pull down to refresh. The app checks again **every 15 minutes** while it's open.
+- **iOS app only: Today.** The best time to go out (Singapore is hottest 11am–4pm, as NEA advises), today's temperature range and whether rain is coming, the 2-hour forecast for your town, the **UV index** and **air quality (PSI, haze)**, with advice when UV or haze is high. All from free NEA APIs on data.gov.sg (`twenty-four-hr-forecast`, `two-hr-forecast`, `uv`, `psi`). NEA has no hour-by-hour temperature forecast, so "best time" uses the daily heat pattern.
 
 ### 🗺️ Cool Spots: map, list and crowdsourced heat map
 - **533 cool places**, each sorted into one of **3 cooling types** (as our mentor suggested):
@@ -144,7 +145,8 @@ xcodegen generate
 - Choose **Walk** or **Cycle**, then **Find cool route**.
 - **Green line** = the cool route through cool spots. **Turquoise pins** = rest stops. **Grey dashed line** = the normal fastest route, for comparison.
 - The summary shows the time, distance, number of rest stops, the % of the route near a cool spot, and how many extra minutes the cooler route takes.
-- **iOS app only: Go.** Turn-by-turn directions like Apple Maps: a list of every turn and rest stop, then a banner with the next turn and its distance, a map that follows you, each turn read aloud, and your arrival time. Directions come from the same free OSRM server, so unnamed footpaths just say "Turn right".
+- **iOS app only: shade.** The cool route is drawn **green where it's in shade** (roofed walkways or trees) and **orange where it's in the sun**, with "62% in shade" next to the fastest route's figure. See *Shade map* below.
+- **iOS app only: Go.** Turn-by-turn directions like Apple Maps: a list of every turn and rest stop, then a banner with the next turn and its distance, a map that follows you, each turn read aloud, and your arrival time. Directions come from the same free OSRM server, so unnamed footpaths just say "Turn right". While you navigate, the next turn also shows on the **Lock Screen** and in the **Dynamic Island** (a Live Activity).
 
 **The trade-off we chose (and why):**
 We don't have data on every shady path in Singapore, so true "shade-aware" routing isn't possible yet. Instead:
@@ -154,8 +156,14 @@ We don't have data on every shady path in Singapore, so true "shade-aware" routi
 4. If that makes the trip more than 50% longer, we use fewer stops.
 
 ✅ Real walking/cycling paths, free, and simple enough to explain.
-❌ It only knows the cool spots in our list, not every tree or covered walkway. A future version could add NParks tree data or LTA covered-linkway data.
+❌ The Expo app only knows the cool spots in our list, not every tree or covered walkway.
 📴 **Offline:** it draws straight lines and estimates the time (marked "approximate").
+
+**Shade map (iOS app):** the iOS app also asks OSRM for up to 2 **alternative routes**, then scores every candidate by how much of it is in shade (minus a penalty for detours) and picks the best one that is at most 50% longer than the fastest. The shade map is built **on the phone**, quietly in the background, with no server of our own:
+- **LTA covered linkways** (7,000+ roofed walkways): one ~1 MB download from LTA DataMall the first time the app opens, refreshed every 2 months.
+- **NParks street and park trees** (TreesSG, 875,000+ trees): only the area you're in or routing through, in squares about 1 km across (~100 KB each), saved for 3 months.
+- Singapore is split into ~22 m cells: roofed walkway = full shade, many tall trees = good shade, a few trees = some shade.
+- If a download fails, routes still work; that area just doesn't count as shade until the next try.
 
 ### ⏰ Alerts and rider break reminders
 - **High heat alert:** a notification, sound and strong vibration when risk **changes** to High (once, not every 15 minutes).
@@ -170,6 +178,7 @@ We don't have data on every shady path in Singapore, so true "shade-aware" routi
   - Tap any answer to hear it read aloud.
 
 ### ⚙️ Settings (gear icon in the Expo app; the **More** tab in the iOS app)
+In the iOS app, **More** (far right tab) is a short menu, and each group opens its own page: Language · Display · Alerts & reminders · Demo · Privacy · Ask Siri · Coming soon.
 - Language: English, 中文, Bahasa Melayu, தமிழ்
 - Large text, Senior mode
 - High heat alert on/off, Outdoor worker mode, reminder interval, "Test reminder now"
@@ -178,6 +187,9 @@ We don't have data on every shady path in Singapore, so true "shade-aware" routi
 - All settings are saved on the phone.
 
 ---
+
+### 🎙️ Siri (iOS app)
+Without opening the app, say **"Is it safe to go out in CoolDrift?"** (heat risk near you) or **"Find a cool place with CoolDrift"** (nearest cool place). Siri answers in the app's language, using your last saved location. These also appear in the Shortcuts app and Spotlight. Siri phrases are English for now.
 
 ## 3. Privacy 🔒
 - No account and no login.
@@ -286,6 +298,7 @@ apps/ios/
     ├── App/
     │   ├── CoolDriftApp.swift   Starts the app, notifications, background check
     │   ├── Theme.swift          Colours + Liquid Glass button helpers
+    │   ├── Shortcuts.swift      Siri: "Is it safe to go out in CoolDrift?"
     │   └── L10n.swift           Translations (t("risk.high"))
     ├── Models/
     │   ├── Geo.swift            Distance maths + map camera helper
@@ -294,7 +307,10 @@ apps/ios/
     ├── Services/            THE LOGIC (same rules as the Expo app)
     │   ├── WeatherService.swift   data.gov.sg APIs, risk calculation, offline cache
     │   ├── LocationService.swift  GPS + permission handling
-    │   ├── RoutingService.swift   Cool route planning (OSRM)
+    │   ├── RoutingService.swift   Cool route planning (OSRM + shade scoring)
+    │   ├── ShadeMap.swift         Shade map: downloads walkways + trees in the background
+    │   ├── ShadeFiles.swift       Reads LTA's zip/shapefile; SVY21 → latitude/longitude
+    │   ├── OutlookService.swift   Today: best time, forecast, UV, haze (PSI)
     │   ├── ReportStore.swift      Hot spot reports (+ backend hook)
     │   ├── Notifier.swift         High heat alerts + worker reminders
     │   ├── BackgroundCheck.swift  Heat check while the app is in the background
@@ -304,17 +320,19 @@ apps/ios/
     │   ├── SettingsStore.swift    Settings (saved on phone)
     │   └── HeatStore.swift        Location + weather + risk; which tab is open
     ├── Views/               SCREENS
-    │   ├── RootView.swift         The 4 tabs + Settings sheet
+    │   ├── RootView.swift         The 5 tabs (Home, Cool Spots, Routes, Ask, More)
     │   ├── HomeView.swift         Home (heat card, tips, Senior mode)
     │   ├── SpotsView.swift        Cool Spots: full-screen map + draggable list + heat reports
     │   ├── RoutesView.swift       Cool Routes + turn-by-turn directions (Go)
     │   ├── ChatView.swift         Ask (chatbot)
-    │   ├── MoreView.swift         More tab: settings + "coming soon"
+    │   ├── MoreView.swift         More tab: menu → settings pages, Siri, "coming soon"
     │   └── Components/            Heat card, draggable map panel, heat bars, icons, banners
     └── Resources/
         ├── coolSpots.json         Copy of apps/expo/src/data/coolSpots.json
         ├── Strings/*.json         Translations, exported from apps/expo/src/i18n
         └── Assets.xcassets        App icon + accent colour
+apps/ios/Shared/                 Shared by the app and the widget extension (Live Activity data)
+apps/ios/Widgets/                Live Activity: next turn on the Lock Screen + Dynamic Island
 ```
 
 ## 6. How to change things
@@ -323,7 +341,7 @@ apps/ios/
 - **Design and animations (Expo):** colours, shadows and corner sizes are all in `apps/expo/src/theme.ts`. To make something animate in, wrap it in `<FadeIn delay={200}>`. For a white box, use `<Card>`. For a button that squishes, use `<ScalePressable>`. All animations switch off automatically if the phone has **Reduce Motion** turned on (some seniors feel dizzy with moving screens).
 - **Design (iOS):** colours are in `apps/ios/CoolDrift/App/Theme.swift`.
 - **Share hot spot reports between phones:** fill in `syncReportToBackend()` and `fetchSharedReports()` at the bottom of `apps/expo/src/services/reports.ts`, and `syncToBackend()` / `fetchShared()` in `apps/ios/CoolDrift/Services/ReportStore.swift` (e.g. with Firebase). ⚠️ This needs a Firebase project and API key, so check with the team first.
-- **Fix a translation:** edit `apps/expo/src/i18n/zh.ts`, `ms.ts` or `ta.ts`. The Chinese, Malay and Tamil text are **placeholder translations**, so please ask a native speaker to check them. Missing lines show in English. The iOS app has the same text in `apps/ios/CoolDrift/Resources/Strings/*.json` (same keys, e.g. `"risk.low"`), so update those too.
+- **Fix a translation:** edit `apps/expo/src/i18n/zh.ts`, `ms.ts` or `ta.ts`. The Chinese, Malay and Tamil text are **placeholder translations**, so please ask a native speaker to check them. Missing lines show in English. The iOS app reads the same text from `apps/ios/CoolDrift/Resources/Strings/*.json`; after changing a translation, run `node tools/export-strings.mjs` from the repo root to copy it over.
 - **Teach the chatbot new questions:** add keywords to `KEYWORDS` in `apps/expo/src/services/chatbot.ts` (and `keywords` in `apps/ios/CoolDrift/Services/Chatbot.swift`), and an answer under `chat.a` in the translations.
 
 ## 7. Libraries used (all free)
@@ -332,6 +350,8 @@ apps/ios/
 **iOS app:** only Apple's own frameworks (SwiftUI, MapKit, Core Location, UserNotifications, BackgroundTasks, AVFoundation). No third-party libraries. XcodeGen is used to generate the Xcode project.
 
 **Data credits:** Contains information from *Community Club / PAssion WaVe Outlet* (People's Association), *Hawker Centres* (NEA) and *Parks* (NParks), accessed from data.gov.sg and made available under the [Singapore Open Data Licence v1.0](https://data.gov.sg/open-data-licence).
+
+**iOS shade map:** covered linkways from **LTA DataMall** (static datasets). Street and park trees from **NParks TreesSG** (public ArcGIS service). ⚠️ NParks does not state a licence for TreesSG, so check with NParks before a public launch.
 
 **Free outside services:** data.gov.sg real-time weather APIs, the OSRM routing server at routing.openstreetmap.de, and OpenStreetMap map tiles on the desktop version. These are community-run and fair use, so don't spam them. No API keys are needed.
 
@@ -342,4 +362,6 @@ apps/ios/
 - The map heat layer uses circles (they work on iPhone and Android) instead of a true blurred heat map, which needs Google Maps.
 - The text-to-speech voices for Tamil and Malay depend on what the phone has installed.
 - Desktop version: reminders and alerts only work while the browser tab is open. OpenStreetMap's free map server is meant for light use, so a real launch with many users should switch to a paid or self-hosted tile server (ask first).
-- The cool spots and translations are copied into the iOS app, so they must be updated in both places.
+- The cool spots and translations are copied into the iOS app, so they must be updated in both places (`node tools/export-strings.mjs` does the translations).
+- data.gov.sg limits how fast an app without an API key can ask for data. The app asks one thing at a time and retries, so the "Today" card can take a few seconds. A free data.gov.sg API key would raise the limit.
+- Shade comes from trees and roofed walkways only; building shadows aren't counted. Tree data has no canopy size, so "shade" is an estimate from tree count and height.

@@ -106,18 +106,24 @@ enum WeatherService {
         guard let url = URL(string: url) else { return nil }
         var request = URLRequest(url: url)
         request.timeoutInterval = 10 // so a bad connection doesn't hang the app
-        guard let (data, response) = try? await URLSession.shared.data(for: request),
-              (response as? HTTPURLResponse)?.statusCode == 200
-        else { return nil }
-        return try? JSONDecoder().decode(T.self, from: data)
+        // data.gov.sg turns away too many requests at once ("429"), so wait a moment and try again.
+        for attempt in 1...4 {
+            guard let (data, response) = try? await URLSession.shared.data(for: request) else { return nil }
+            let status = (response as? HTTPURLResponse)?.statusCode
+            if status == 200 { return try? JSONDecoder().decode(T.self, from: data) }
+            if status != 429 { return nil }
+            try? await Task.sleep(for: .seconds(1.5 * Double(attempt)))
+        }
+        return nil
     }
 
     /// Downloads all three datasets. Any one of them may fail — that's OK.
     private static func downloadAll() async throws -> RawWeather {
-        async let t = fetch(StationAPI.self, "\(base)/air-temperature")
-        async let h = fetch(StationAPI.self, "\(base)/relative-humidity")
-        async let w = fetch(WbgtAPI.self, "\(base)/weather?api=wbgt")
-        let raw = RawWeather(temperature: await t, humidity: await h, wbgt: await w, savedAt: .now)
+        // One after another: data.gov.sg turns away requests that arrive too fast.
+        let t = await fetch(StationAPI.self, "\(base)/air-temperature")
+        let h = await fetch(StationAPI.self, "\(base)/relative-humidity")
+        let w = await fetch(WbgtAPI.self, "\(base)/weather?api=wbgt")
+        let raw = RawWeather(temperature: t, humidity: h, wbgt: w, savedAt: .now)
         if raw.temperature == nil, raw.humidity == nil, raw.wbgt == nil { throw URLError(.cannotLoadFromNetwork) }
         return raw
     }

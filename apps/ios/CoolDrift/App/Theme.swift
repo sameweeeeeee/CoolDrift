@@ -25,6 +25,7 @@ enum Theme {
     static let coolRoute = Color(hex: 0x1B7A43)
     static let fastRoute = Color(hex: 0x6B7C73)
     static let restStop = Color(hex: 0x00897B)
+    static let sunny = Color(hex: 0xEF8A17) // parts of a route out in the sun
 
     /// Heat-risk colours. All are readable with white text.
     static func risk(_ level: RiskLevel) -> Color {

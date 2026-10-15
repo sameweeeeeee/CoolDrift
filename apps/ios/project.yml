@@ -15,6 +15,9 @@ targets:
     platform: iOS
     sources:
       - CoolDrift
+      - Shared
+    dependencies:
+      - target: CoolDriftWidgets # Live Activity (Lock Screen + Dynamic Island)
     info:
       path: CoolDrift/Info.plist
       properties:
@@ -35,6 +38,8 @@ targets:
         NSLocationWhenInUseUsageDescription: CoolDrift uses your location on this phone only, to show heat risk and cool places near you.
         UIBackgroundModes:
           - fetch
+          - location # keeps directions going while the phone is locked
+        NSSupportsLiveActivities: true
         BGTaskSchedulerPermittedIdentifiers:
           - com.cooldrift.app.heatcheck
     settings:
@@ -50,3 +55,27 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         CODE_SIGN_STYLE: Automatic
         ENABLE_PREVIEWS: YES
+
+  CoolDriftWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - Widgets
+      - Shared
+    info:
+      path: Widgets/Info.plist
+      properties:
+        CFBundleDisplayName: CoolDrift
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.cooldrift.app.widgets
+        MARKETING_VERSION: 1.0.0
+        CURRENT_PROJECT_VERSION: 1
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SWIFT_VERSION: "5.0"
+        CODE_SIGN_STYLE: Automatic
+        SKIP_INSTALL: YES

@@ -86,6 +86,8 @@ const en = {
     },
   },
   routes: {
+    shade: '%{pct}% in shade',
+    shadeLegend: 'Green = shade (roofs, trees) · Orange = sun',
     tapDestination: 'Tap the map to choose where you are going',
     to: 'To: %{name}',
     pinned: 'Pinned place',
@@ -195,6 +197,26 @@ const en = {
   more: {
     soonTitle: 'Coming soon',
     soon: 'More features are on the way.',
+    siri: 'Ask Siri',
+    siriHint: 'You can ask Siri without opening the app. Try saying:',
+    siriSafe: 'Is it safe to go out in CoolDrift?',
+    siriNearest: 'Find a cool place with CoolDrift',
+  },
+  outlook: {
+    title: 'Today',
+    bestTime: 'Best time to go out',
+    morning: 'Now until 10am is the coolest time. It gets hot from 11am to 4pm.',
+    midday: 'This is the hottest part of the day. It gets cooler after 5pm.',
+    evening: 'It is cooler now. Tomorrow, go out before 10am.',
+    range: 'Today %{low}–%{high}°C',
+    rainLater: 'Showers or thunderstorms expected later.',
+    nearby: 'Next 2 hours, %{area}: %{text}',
+    uv: 'UV index',
+    uvTip: 'Wear a hat and sunscreen. Stay in the shade.',
+    air: 'Air quality (PSI)',
+    airTip: 'Haze: spend less time outdoors. Seniors and children should stay indoors.',
+    uvLevel: { low: 'Low', moderate: 'Moderate', high: 'High', veryHigh: 'Very high', extreme: 'Extreme' },
+    psiLevel: { good: 'Good', moderate: 'Moderate', unhealthy: 'Unhealthy', veryUnhealthy: 'Very unhealthy', hazardous: 'Hazardous' },
   },
 };
 

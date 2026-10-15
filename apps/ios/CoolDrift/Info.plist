@@ -26,6 +26,8 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>CoolDrift uses your location on this phone only, to show heat risk and cool places near you.</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -34,6 +36,7 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>
+		<string>location</string>
 	</array>
 	<key>UILaunchScreen</key>
 	<dict>

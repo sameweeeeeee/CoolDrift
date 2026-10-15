@@ -10,6 +10,7 @@ final class HeatStore {
     var location = LatLng.singaporeCentre
     var locationStatus = LocationStatus.unknown
     var reading: HeatReading?
+    var outlook: Outlook? // best time to go out, forecast, UV, haze
     var loading = true
     var failed = false // true = no live data AND no saved data
 
@@ -25,6 +26,7 @@ final class HeatStore {
         } catch {
             failed = true
         }
+        outlook = await OutlookService.today(at: loc.coords) // after, so the API isn't flooded
         loading = false
     }
 

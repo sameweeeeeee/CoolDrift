@@ -5,6 +5,7 @@
 //    read aloud, with the map following you.
 // See RoutingService.swift for how the route is chosen.
 
+import ActivityKit
 import CoreLocation
 import MapKit
 import SwiftUI
@@ -17,6 +18,7 @@ struct RoutesView: View {
     @State private var dest: AppRouter.Destination?
     @State private var mode = TravelMode.foot
     @State private var plan: CoolRoutePlan?
+    @State private var pieces: [(shaded: Bool, points: [LatLng])] = [] // cool route cut into shade / sun
     @State private var loading = false
     @State private var camera = MapCameraPosition.automatic
     @State private var detent = PanelDetent.collapsed
@@ -26,6 +28,8 @@ struct RoutesView: View {
     @State private var here: LatLng? // live position while navigating
     @State private var next = 1 // index of the upcoming turn in plan.cool.steps
     @State private var spokenStep = -1 // so each turn is read aloud only once
+    @State private var activity: Activity<NavigationAttributes>? // Lock Screen + Dynamic Island
+    @State private var backgroundSession: CLBackgroundActivitySession? // keeps location on while locked
 
     private var steps: [RouteStep] { plan?.cool.steps ?? [] }
     private var arrived: Bool { navigating && next >= steps.count }
@@ -76,8 +80,12 @@ struct RoutesView: View {
                         MapPolyline(coordinates: plan.fastest.path.map(\.coordinate))
                             .stroke(Theme.fastRoute, style: StrokeStyle(lineWidth: 4, dash: [8, 8]))
                     }
-                    MapPolyline(coordinates: plan.cool.path.map(\.coordinate))
-                        .stroke(Theme.coolRoute, style: StrokeStyle(lineWidth: 8, lineCap: .round, lineJoin: .round))
+                    // The cool route: green where it's in shade, orange where it's in the sun.
+                    ForEach(pieces.indices, id: \.self) { i in
+                        MapPolyline(coordinates: pieces[i].points.map(\.coordinate))
+                            .stroke(pieces[i].shaded ? Theme.coolRoute : Theme.sunny,
+                                    style: StrokeStyle(lineWidth: 8, lineCap: .round, lineJoin: .round))
+                    }
                     ForEach(plan.restStops) { s in
                         Marker("\(t("routes.restStop")): \(s.name)", systemImage: "leaf.fill", coordinate: s.location.coordinate)
                             .tint(Theme.restStop)
@@ -181,7 +189,7 @@ struct RoutesView: View {
                     .font(.subheadline)
                     .foregroundStyle(Theme.textMuted)
                 Text([
-                    t("routes.nearCool", ["pct": plan.coolScore]),
+                    t("routes.shade", ["pct": plan.shade]),
                     extraMin > 0 ? t("routes.extra", ["min": extraMin]) : nil,
                 ].compactMap { $0 }.joined(separator: " · "))
                     .font(.footnote.weight(.semibold))
@@ -198,9 +206,11 @@ struct RoutesView: View {
             .buttonStyle(.plain)
         }
 
-        Label("\(t("routes.fastest")): \(formatDuration(plan.fastest.duration)) · \(formatDistance(plan.fastest.distance))", systemImage: "stopwatch")
+        Label("\(t("routes.fastest")): \(formatDuration(plan.fastest.duration)) · \(formatDistance(plan.fastest.distance)) · \(t("routes.shade", ["pct": plan.fastestShade]))", systemImage: "stopwatch")
             .font(.subheadline)
             .foregroundStyle(Theme.fastRoute)
+
+        Text(t("routes.shadeLegend")).font(.footnote).foregroundStyle(Theme.textMuted)
 
         if plan.approximate {
             Text(t("routes.approximate")).font(.footnote).foregroundStyle(Theme.risk(.moderate))
@@ -327,12 +337,48 @@ struct RoutesView: View {
         withAnimation { navigating = true }
         follow()
         say(steps[0].instruction(destination: dest?.name ?? ""))
+        backgroundSession = CLBackgroundActivitySession()
+        startLiveActivity()
     }
 
     private func endNavigation() {
         guard navigating else { return }
         withAnimation { navigating = false }
         if let plan { camera = Geo.camera(showing: plan.cool.path) }
+        backgroundSession?.invalidate()
+        backgroundSession = nil
+        let ending = activity
+        activity = nil
+        Task { await ending?.end(nil, dismissalPolicy: .immediate) }
+    }
+
+    // MARK: Live Activity
+
+    /// What the Lock Screen / Dynamic Island should show right now.
+    private var liveState: NavigationAttributes.ContentState {
+        let step = steps.indices.contains(next) ? steps[next] : nil
+        return .init(
+            icon: arrived ? "mappin.circle.fill" : step?.icon ?? "arrow.up",
+            instruction: arrived ? t("nav.arrived") : step?.instruction(destination: dest?.name ?? "") ?? "",
+            distance: formatDistance(distanceToNext),
+            arrival: Date(timeIntervalSinceReferenceDate: ((Date.now.timeIntervalSinceReferenceDate + remainingSeconds) / 60).rounded() * 60),
+            remaining: "\(formatDuration(remainingSeconds)) · \(formatDistance(remainingMetres))",
+            arrived: arrived
+        )
+    }
+
+    private func startLiveActivity() {
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+        let attributes = NavigationAttributes(destination: dest?.name ?? "", arrivalLabel: t("nav.arrive"))
+        activity = try? Activity.request(attributes: attributes, content: .init(state: liveState, staleDate: nil))
+    }
+
+    /// Only sends an update when something visible changed (iOS limits how often apps can update).
+    private func updateLiveActivity() {
+        guard let activity else { return }
+        let state = liveState
+        guard state != activity.content.state else { return }
+        Task { await activity.update(.init(state: state, staleDate: nil)) }
     }
 
     /// Like Apple Maps: close up, tilted, and turned to face the next turn.
@@ -347,7 +393,10 @@ struct RoutesView: View {
     /// Called on every location update: read the next turn aloud when it's close,
     /// and move on to the following turn once we've reached it.
     private func advance() {
-        defer { follow() }
+        defer {
+            follow()
+            updateLiveActivity()
+        }
         guard steps.indices.contains(next) else { return }
         if distanceToNext < 60, spokenStep != next {
             spokenStep = next
@@ -369,6 +418,7 @@ struct RoutesView: View {
         loading = true
         let result = await RoutingService.plan(from: heat.location, to: dest.coords, mode: mode)
         plan = result
+        pieces = ShadeMap.pieces(result.cool.path)
         loading = false
         withAnimation(.snappy) {
             camera = Geo.camera(showing: [heat.location, dest.coords] + result.cool.path)

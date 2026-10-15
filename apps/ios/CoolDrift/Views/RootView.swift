@@ -45,6 +45,8 @@ struct RootView: View {
         .task {
             // First check, then every 15 minutes while the app is open.
             await heat.refresh()
+            // Quietly fetch the shade map (walkways + nearby trees) for cooler routes later.
+            Task { await ShadeMap.warmUp(around: heat.location) }
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(15 * 60))
                 await heat.refresh()

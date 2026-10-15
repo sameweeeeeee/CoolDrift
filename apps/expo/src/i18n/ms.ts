@@ -59,6 +59,8 @@ const ms: PartialTranslations = {
     },
   },
   routes: {
+    shade: '%{pct}% berteduh',
+    shadeLegend: 'Hijau = teduh (bumbung, pokok) · Oren = panas terik',
     tapDestination: 'Tekan peta untuk pilih destinasi',
     walk: 'Jalan kaki',
     cycle: 'Berbasikal',
@@ -139,6 +141,24 @@ const ms: PartialTranslations = {
   more: {
     soonTitle: 'Akan datang',
     soon: 'Lebih banyak ciri akan datang.',
+    siri: 'Tanya Siri',
+    siriHint: 'Anda boleh tanya Siri tanpa buka aplikasi. Cuba sebut:',
+  },
+  outlook: {
+    title: 'Hari ini',
+    bestTime: 'Masa terbaik untuk keluar',
+    morning: 'Sekarang hingga 10 pagi paling sejuk. Panas dari 11 pagi hingga 4 petang.',
+    midday: 'Ini waktu paling panas. Lebih sejuk selepas 5 petang.',
+    evening: 'Sekarang lebih sejuk. Esok, keluar sebelum 10 pagi.',
+    range: 'Hari ini %{low}–%{high}°C',
+    rainLater: 'Hujan atau ribut petir dijangka nanti.',
+    nearby: '2 jam akan datang, %{area}: %{text}',
+    uv: 'Indeks UV',
+    uvTip: 'Pakai topi dan pelindung matahari. Duduk di tempat teduh.',
+    air: 'Kualiti udara (PSI)',
+    airTip: 'Jerebu: kurangkan masa di luar. Warga emas dan kanak-kanak patut duduk di dalam.',
+    uvLevel: { low: 'Rendah', moderate: 'Sederhana', high: 'Tinggi', veryHigh: 'Sangat tinggi', extreme: 'Ekstrem' },
+    psiLevel: { good: 'Baik', moderate: 'Sederhana', unhealthy: 'Tidak sihat', veryUnhealthy: 'Sangat tidak sihat', hazardous: 'Berbahaya' },
   },
 };
 
