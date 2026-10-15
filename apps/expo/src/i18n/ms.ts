@@ -3,7 +3,7 @@
 import type { PartialTranslations } from './index';
 
 const ms: PartialTranslations = {
-  tabs: { home: 'Utama', spots: 'Tempat Sejuk', routes: 'Laluan', chat: 'Tanya' },
+  tabs: { home: 'Utama', spots: 'Tempat Sejuk', routes: 'Laluan', chat: 'Tanya', more: 'Lagi' },
   common: {
     settings: 'Tetapan',
     loading: 'Memeriksa cuaca panas…',
@@ -106,6 +106,39 @@ const ms: PartialTranslations = {
     restTitle: '💧 Masa rehat',
     restBody: 'Rehat di tempat teduh 10 minit dan minum air.',
     restSpeech: 'Masa untuk rehat. Sila rehat di tempat teduh dan minum air.',
+  },
+  nav: {
+    go: 'Mula',
+    end: 'Tamat',
+    directions: 'Arah',
+    arrived: 'Anda telah tiba',
+    arrive: 'Tiba',
+    then: 'Kemudian',
+    start: 'Mula dari lokasi anda',
+    depart: 'Mula di %{road}',
+    turn: 'Belok %{dir} ke %{road}',
+    turnNoRoad: 'Belok %{dir}',
+    keep: 'Ikut %{dir} ke %{road}',
+    keepNoRoad: 'Ikut %{dir}',
+    continue: 'Terus di %{road}',
+    continueNoRoad: 'Terus lurus',
+    roundabout: 'Di bulatan, keluar ke %{road}',
+    roundaboutNoRoad: 'Lalu bulatan',
+    uturn: 'Buat pusingan U',
+    rest: 'Tempat rehat: %{name}',
+    arriveAt: 'Tiba di %{name}',
+    dir: {
+      left: 'kiri',
+      right: 'kanan',
+      slightLeft: 'sedikit ke kiri',
+      slightRight: 'sedikit ke kanan',
+      sharpLeft: 'tajam ke kiri',
+      sharpRight: 'tajam ke kanan',
+    },
+  },
+  more: {
+    soonTitle: 'Akan datang',
+    soon: 'Lebih banyak ciri akan datang.',
   },
 };
 

@@ -4,7 +4,7 @@
 // "%{name}" means "put a value here", e.g. %{time} → "3:45 PM".
 
 const en = {
-  tabs: { home: 'Home', spots: 'Cool Spots', routes: 'Routes', chat: 'Ask' },
+  tabs: { home: 'Home', spots: 'Cool Spots', routes: 'Routes', chat: 'Ask', more: 'More' },
   common: {
     settings: 'Settings',
     loading: 'Checking the heat…',
@@ -96,6 +96,7 @@ const en = {
     cool: 'Cool route',
     fastest: 'Fastest',
     stops: '%{count} rest stops',
+    stopsOne: '1 rest stop',
     nearCool: '%{pct}% near cool spots',
     extra: '+%{min} min for more shade',
     approximate: 'No internet: straight-line estimate only.',
@@ -161,6 +162,39 @@ const en = {
     restTitle: '💧 Time for a break',
     restBody: 'Rest in the shade for 10 minutes and drink a cup of water.',
     restSpeech: 'Time for a break. Please rest in the shade and drink some water.',
+  },
+  nav: {
+    go: 'Go',
+    end: 'End',
+    directions: 'Directions',
+    arrived: 'You have arrived',
+    arrive: 'Arrival',
+    then: 'Then',
+    start: 'Start at your location',
+    depart: 'Head off on %{road}',
+    turn: 'Turn %{dir} onto %{road}',
+    turnNoRoad: 'Turn %{dir}',
+    keep: 'Keep %{dir} onto %{road}',
+    keepNoRoad: 'Keep %{dir}',
+    continue: 'Continue on %{road}',
+    continueNoRoad: 'Continue straight',
+    roundabout: 'At the roundabout, exit onto %{road}',
+    roundaboutNoRoad: 'Go through the roundabout',
+    uturn: 'Make a U-turn',
+    rest: 'Rest stop: %{name}',
+    arriveAt: 'Arrive at %{name}',
+    dir: {
+      left: 'left',
+      right: 'right',
+      slightLeft: 'slightly left',
+      slightRight: 'slightly right',
+      sharpLeft: 'sharp left',
+      sharpRight: 'sharp right',
+    },
+  },
+  more: {
+    soonTitle: 'Coming soon',
+    soon: 'More features are on the way.',
   },
 };
 

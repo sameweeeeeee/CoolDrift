@@ -3,7 +3,7 @@
 import type { PartialTranslations } from './index';
 
 const ta: PartialTranslations = {
-  tabs: { home: 'முகப்பு', spots: 'குளிர் இடங்கள்', routes: 'வழிகள்', chat: 'கேள்' },
+  tabs: { home: 'முகப்பு', spots: 'குளிர் இடங்கள்', routes: 'வழிகள்', chat: 'கேள்', more: 'மேலும்' },
   common: {
     settings: 'அமைப்புகள்',
     loading: 'வெப்பத்தை சரிபார்க்கிறது…',

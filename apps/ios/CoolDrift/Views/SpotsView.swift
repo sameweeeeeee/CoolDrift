@@ -1,4 +1,4 @@
-// SpotsView.swift — map + list of cool places, and the crowdsourced heat map.
+// SpotsView.swift — full-screen map of cool places, with a list in a panel you drag up and down.
 //  • Pins = cool places (blue = air-con, brown = shaded, green = green area)
 //  • Coloured circles = hot spots reported by users (yellow → orange → red)
 //  • "Report hot spot" lets you add your own report.
@@ -19,6 +19,7 @@ struct SpotsView: View {
     @State private var step = ReportStep.none
     @State private var message: String?
     @State private var camera = MapCameraPosition.automatic
+    @State private var detent = PanelDetent.half
 
     private static let mapPinLimit = 80 // only the nearest go on the map, so it stays smooth
 
@@ -32,21 +33,20 @@ struct SpotsView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            map
-                .containerRelativeFrame(.vertical) { height, _ in height * 0.45 }
-            switch step {
-            case .none: list
-            case .pick: pickPanel
-            case .level(let where_): levelPanel(where_)
-            }
+        ZStack(alignment: .top) {
+            map.ignoresSafeArea()
+            topBar
+            panel
         }
-        .background(Theme.background)
         .onAppear { reports = ReportStore.load() }
         .onChange(of: heat.location, initial: true) { _, here in
             // Show the user together with the 3 nearest cool spots.
             let nearby = CoolSpots.byDistance(from: here).prefix(3).map(\.spot.location)
             camera = Geo.camera(showing: [here] + nearby)
+        }
+        .onChange(of: step) { _, step in
+            // While reporting, shrink the panel so the map is free to tap.
+            withAnimation(.snappy) { detent = step == .none ? .half : .collapsed }
         }
     }
 
@@ -74,13 +74,16 @@ struct SpotsView: View {
                         .tint(.red)
                 }
             }
-            .mapControls { MapUserLocationButton() }
             .onTapGesture { point in
                 guard step == .pick, let coordinate = proxy.convert(point, from: .local) else { return }
                 step = .level(LatLng(coordinate))
             }
         }
-        .overlay(alignment: .topLeading) {
+    }
+
+    /// Glass buttons floating at the top of the map, plus the "thanks" message.
+    private var topBar: some View {
+        VStack(spacing: 10) {
             if step == .none {
                 HStack {
                     Button {
@@ -91,18 +94,18 @@ struct SpotsView: View {
                     .tint(Theme.risk(.high))
                     .glassButton(prominent: true)
 
+                    Spacer()
+
                     Button {
-                        showHeat.toggle()
+                        withAnimation { showHeat.toggle() }
                     } label: {
                         Label(t("spots.showReports"), systemImage: showHeat ? "eye" : "eye.slash")
                     }
+                    .foregroundStyle(Theme.text)
                     .glassButton()
                 }
                 .font(.subheadline.bold())
-                .padding(10)
             }
-        }
-        .overlay(alignment: .bottom) {
             if let message {
                 Text(message)
                     .font(.subheadline.bold())
@@ -110,66 +113,116 @@ struct SpotsView: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
                     .background(Theme.primaryDark, in: Capsule())
-                    .padding(12)
-                    .transition(.opacity)
+                    .transition(.move(edge: .top).combined(with: .opacity))
             }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+    }
+
+    // MARK: Panel
+
+    private var panel: some View {
+        DraggablePanel(detent: $detent, collapsedHeight: step == .none ? 150 : 230) {
+            switch step {
+            case .none: listHeader
+            case .pick: pickPanel
+            case .level(let where_): levelPanel(where_)
+            }
+        } content: {
+            if step == .none { list }
         }
     }
 
-    // MARK: List
+    private var listHeader: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(t("spots.title")).font(.title3.bold())
+                Spacer()
+                Text(verbatim: "\(spots.count)").font(.subheadline).foregroundStyle(Theme.textMuted)
+            }
+            .padding(.horizontal, 20)
 
-    private var list: some View {
-        List {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     chip(t("spots.all"), selected: filter == nil) { filter = nil }
                     ForEach(SpotType.allCases, id: \.self) { type in
-                        chip(type.label, selected: filter == type) { filter = type }
+                        chip(type.label, icon: type.icon, selected: filter == type) { filter = type }
                     }
                 }
+                .padding(.horizontal, 20)
             }
-            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-            .listRowBackground(Color.clear)
+        }
+        .padding(.bottom, 10)
+    }
 
-            if showHeat && !reports.isEmpty {
-                Text(t("spots.legend")).font(.footnote).foregroundStyle(Theme.textMuted)
-                    .listRowBackground(Color.clear)
+    private var list: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 0) {
+                if showHeat && !reports.isEmpty {
+                    Label(t("spots.legend"), systemImage: "flame")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.textMuted)
+                        .padding(.vertical, 8)
+                }
+                ForEach(spots) { s in
+                    row(s)
+                    Divider().padding(.leading, 56)
+                }
             }
+            .padding(.horizontal, 20)
+        }
+    }
 
-            ForEach(spots) { s in
+    private func row(_ s: SpotDistance) -> some View {
+        HStack(spacing: 12) {
+            Button {
+                camera = Geo.camera(showing: [s.spot.location])
+                withAnimation(.snappy) { detent = .collapsed }
+            } label: {
                 HStack(spacing: 12) {
                     CoolingIcon(cooling: s.spot.cooling, icon: s.spot.type.icon)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(s.spot.name).bold()
-                        Text("\(s.spot.type.label) · \(formatDistance(s.distance))")
-                            .font(.subheadline).foregroundStyle(Theme.textMuted)
+                        Text(s.spot.name).font(.body.weight(.semibold)).foregroundStyle(Theme.text)
+                        Text("\(Text(s.spot.cooling.label).foregroundStyle(Theme.cooling(s.spot.cooling)).bold()) · \(s.spot.type.label) · \(formatDistance(s.distance))")
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.textMuted)
                         if let note = s.spot.note {
-                            Text(note).font(.footnote).foregroundStyle(Theme.textMuted)
+                            Text(note).font(.footnote).foregroundStyle(Theme.textMuted).lineLimit(2)
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
-                    .onTapGesture { camera = Geo.camera(showing: [s.spot.location]) }
-
-                    Button(t("spots.routeHere")) { router.route(to: s.spot) }
-                        .buttonStyle(.borderedProminent)
-                        .font(.subheadline.bold())
                 }
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+
+            Button {
+                router.route(to: s.spot)
+            } label: {
+                Image(systemName: "arrow.triangle.turn.up.right.diamond.fill")
+                    .font(.title3)
+                    .foregroundStyle(.white)
+                    .frame(width: 44, height: 44)
+                    .background(Theme.primary, in: Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("\(t("spots.routeHere")): \(s.spot.name)")
         }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
+        .padding(.vertical, 10)
     }
 
-    private func chip(_ label: String, selected: Bool, action: @escaping () -> Void) -> some View {
+    private func chip(_ label: String, icon: String? = nil, selected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(label)
-                .font(.subheadline.bold())
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-                .foregroundStyle(selected ? .white : Theme.primary)
-                .background(selected ? Theme.primary : .white, in: Capsule())
-                .overlay(Capsule().stroke(Theme.primary, lineWidth: 1.5))
+            HStack(spacing: 6) {
+                if let icon { Image(systemName: icon).font(.caption) }
+                Text(label)
+            }
+            .font(.subheadline.weight(.semibold))
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .foregroundStyle(selected ? .white : Theme.text)
+            .background(selected ? AnyShapeStyle(Theme.primary) : AnyShapeStyle(.white.opacity(0.7)), in: Capsule())
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? .isSelected : [])
@@ -179,23 +232,24 @@ struct SpotsView: View {
 
     private var pickPanel: some View {
         VStack(spacing: 12) {
-            Text(t("spots.tapToPin")).font(.title3.bold()).multilineTextAlignment(.center)
+            Text(t("spots.tapToPin")).font(.headline).multilineTextAlignment(.center)
             Button {
                 step = .level(heat.location)
             } label: {
                 Label(t("spots.useMyLocation"), systemImage: "location.fill")
+                    .bold()
                     .frame(maxWidth: .infinity, minHeight: 44)
             }
             .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.capsule)
             cancelButton
-            Spacer()
         }
-        .padding(16)
+        .padding(.horizontal, 20)
     }
 
     private func levelPanel(_ where_: LatLng) -> some View {
         VStack(spacing: 12) {
-            Text(t("spots.howHot")).font(.title3.bold()).multilineTextAlignment(.center)
+            Text(t("spots.howHot")).font(.headline).multilineTextAlignment(.center)
             HStack(spacing: 10) {
                 ForEach(HotLevel.allCases, id: \.self) { level in
                     Button {
@@ -203,27 +257,26 @@ struct SpotsView: View {
                     } label: {
                         VStack(spacing: 6) {
                             HeatBars(level: level)
-                            Text(level.label).bold()
+                            Text(level.label).font(.subheadline.bold())
                         }
                         .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity, minHeight: 80)
-                        .background(Theme.heatButton(level), in: RoundedRectangle(cornerRadius: 12))
+                        .frame(maxWidth: .infinity, minHeight: 76)
+                        .background(Theme.heatButton(level), in: RoundedRectangle(cornerRadius: 16))
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(level.label)
                 }
             }
             cancelButton
-            Spacer()
         }
-        .padding(16)
+        .padding(.horizontal, 20)
     }
 
     private var cancelButton: some View {
         Button(t("common.cancel")) { step = .none }
-            .buttonStyle(.bordered)
-            .controlSize(.large)
-            .frame(maxWidth: .infinity)
+            .font(.body.weight(.semibold))
+            .foregroundStyle(Theme.text)
+            .frame(maxWidth: .infinity, minHeight: 36)
     }
 
     private func save(_ level: HotLevel, at where_: LatLng) {

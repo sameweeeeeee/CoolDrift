@@ -24,6 +24,7 @@ struct Route {
     var path: [LatLng]
     var distance: Double // metres
     var duration: Double // seconds
+    var steps: [RouteStep] = [] // turn-by-turn directions
 }
 
 struct CoolRoutePlan {
@@ -37,14 +38,23 @@ struct CoolRoutePlan {
 enum RoutingService {
     private static let nearRouteM = 300.0
 
-    /// Asks OSRM for a route through the given points (in order).
-    private static func osrm(_ points: [LatLng], _ mode: TravelMode) async throws -> Route {
+    /// Asks OSRM for a route through the given points (in order), with turn-by-turn steps.
+    /// `stops` are the cool spots between the start and the end (one per middle point).
+    private static func osrm(_ points: [LatLng], _ mode: TravelMode, stops: [CoolSpot] = []) async throws -> Route {
         struct Response: Decodable {
             struct R: Decodable {
                 struct Geometry: Decodable { let coordinates: [[Double]] }
+                struct Leg: Decodable { let steps: [Step] }
+                struct Step: Decodable {
+                    struct Maneuver: Decodable { let type: String; let modifier: String?; let location: [Double] }
+                    let maneuver: Maneuver
+                    let name: String?
+                    let distance: Double
+                }
                 let geometry: Geometry
                 let distance: Double
                 let duration: Double
+                let legs: [Leg]?
             }
             let code: String
             let routes: [R]?
@@ -53,25 +63,54 @@ enum RoutingService {
         let profile = mode == .foot ? "routed-foot" : "routed-bike"
         // OSRM wants "longitude,latitude" pairs separated by ";"
         let coords = points.map { String(format: "%.6f,%.6f", $0.longitude, $0.latitude) }.joined(separator: ";")
-        let url = URL(string: "https://routing.openstreetmap.de/\(profile)/route/v1/driving/\(coords)?overview=full&geometries=geojson")!
+        let url = URL(string: "https://routing.openstreetmap.de/\(profile)/route/v1/driving/\(coords)?overview=full&geometries=geojson&steps=true")!
         var request = URLRequest(url: url)
         request.timeoutInterval = 15
 
         let (data, _) = try await URLSession.shared.data(for: request)
         let res = try JSONDecoder().decode(Response.self, from: data)
         guard res.code == "Ok", let r = res.routes?.first else { throw URLError(.badServerResponse) }
+
+        // Join the legs (start → stop 1 → stop 2 → end) into one list of steps.
+        // Arriving at a middle point becomes a "Rest stop" step; leaving it again is skipped.
+        var steps: [RouteStep] = []
+        let legs = r.legs ?? []
+        for (i, leg) in legs.enumerated() {
+            for step in leg.steps {
+                let m = step.maneuver
+                let at = LatLng(latitude: m.location[1], longitude: m.location[0])
+                if m.type == "depart", i > 0 { steps[steps.count - 1].distance += step.distance; continue }
+                if m.type == "arrive", i < legs.count - 1, i < stops.count {
+                    steps.append(RouteStep(kind: .rest(stops[i]), road: "", location: at, distance: 0))
+                    continue
+                }
+                if let made = RouteStep.from(type: m.type, modifier: m.modifier, road: step.name ?? "", location: at, distance: step.distance) {
+                    steps.append(made)
+                } else if !steps.isEmpty {
+                    steps[steps.count - 1].distance += step.distance // just a name change: keep going
+                }
+            }
+        }
+
         return Route(
             path: r.geometry.coordinates.map { LatLng(latitude: $0[1], longitude: $0[0]) },
             distance: r.distance,
-            duration: r.duration
+            duration: r.duration,
+            steps: steps
         )
     }
 
     /// Offline backup: straight lines between the points.
-    private static func straightLine(_ points: [LatLng], _ mode: TravelMode) -> Route {
-        var distance = zip(points, points.dropFirst()).reduce(0) { $0 + Geo.distance($1.0, $1.1) }
-        distance *= 1.3 // real streets are ~30% longer than a straight line
-        return Route(path: points, distance: distance, duration: distance / mode.speed)
+    private static func straightLine(_ points: [LatLng], _ mode: TravelMode, stops: [CoolSpot] = []) -> Route {
+        let legs = zip(points, points.dropFirst()).map { Geo.distance($0, $1) * 1.3 } // streets are ~30% longer
+        let distance = legs.reduce(0, +)
+        // Steps: start → each rest stop → arrive.
+        var steps = [RouteStep(kind: .depart, road: "", location: points[0], distance: legs.first ?? 0)]
+        for (i, stop) in stops.enumerated() where i + 1 < legs.count {
+            steps.append(RouteStep(kind: .rest(stop), road: "", location: stop.location, distance: legs[i + 1]))
+        }
+        steps.append(RouteStep(kind: .arrive, road: "", location: points[points.count - 1], distance: 0))
+        return Route(path: points, distance: distance, duration: distance / mode.speed, steps: steps)
     }
 
     /// Picks cool spots between A and B. Longer trips get more stops (about one every 1.5 km, max 3).
@@ -110,7 +149,7 @@ enum RoutingService {
 
             // Try with all stops, then fewer, until the detour is acceptable (≤ 50% longer).
             while !stops.isEmpty {
-                let attempt = try await osrm([from] + stops.map(\.location) + [to], mode)
+                let attempt = try await osrm([from] + stops.map(\.location) + [to], mode, stops: stops)
                 if attempt.distance <= fastest.distance * 1.5 {
                     cool = attempt
                     break
@@ -133,7 +172,7 @@ enum RoutingService {
         } catch {
             // Offline or routing server problem → straight-line estimate.
             let fastest = straightLine([from, to], mode)
-            let cool = straightLine([from] + stops.map(\.location) + [to], mode)
+            let cool = straightLine([from] + stops.map(\.location) + [to], mode, stops: stops)
             return CoolRoutePlan(fastest: fastest, cool: cool, restStops: stops, coolScore: coolScore(cool.path), approximate: true)
         }
     }

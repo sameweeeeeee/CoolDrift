@@ -36,38 +36,56 @@ struct ChatView: View {
         .safeAreaInset(edge: .bottom) { composer }
     }
 
+    private var canSend: Bool { !input.trimmingCharacters(in: .whitespaces).isEmpty }
+
+    /// Quick questions + a glass text field with the send button inside it.
+    /// It floats over the messages; the chips hide while you type.
     private var composer: some View {
         VStack(spacing: 10) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(["safe", "nearest", "temp", "tips"], id: \.self) { key in
-                        Button(t("chat.q.\(key)")) { ask(t("chat.q.\(key)")) }
-                            .buttonStyle(.bordered)
-                            .buttonBorderShape(.capsule)
-                            .font(.subheadline.bold())
+            if !typing {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(["safe", "nearest", "temp", "tips"], id: \.self) { key in
+                            Button(t("chat.q.\(key)")) { ask(t("chat.q.\(key)")) }
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(Theme.primary)
+                                .glassButton()
+                        }
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 2)
                 }
-                .padding(.horizontal, 16)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
 
-            HStack(spacing: 8) {
+            HStack(alignment: .center, spacing: 8) {
                 TextField(t("chat.placeholder"), text: $input)
-                    .textFieldStyle(.roundedBorder)
                     .focused($typing)
                     .submitLabel(.send)
                     .onSubmit { ask(input) }
+                    .padding(.leading, 18)
+                    .padding(.vertical, 12)
+
                 Button {
                     ask(input)
                 } label: {
-                    Image(systemName: "arrow.up").font(.headline)
+                    Image(systemName: "arrow.up")
+                        .font(.body.weight(.bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 36, height: 36)
+                        .background(canSend ? Theme.primary : Color.gray.opacity(0.35), in: Circle())
                 }
-                .glassButton(prominent: true)
+                .buttonStyle(.plain)
+                .disabled(!canSend)
+                .padding(.trailing, 6)
                 .accessibilityLabel(t("chat.send"))
             }
+            .glassBackground(in: Capsule())
             .padding(.horizontal, 16)
         }
-        .padding(.vertical, 10)
-        .background(.bar)
+        .padding(.bottom, 8)
+        .animation(.snappy(duration: 0.25), value: typing)
+        .animation(.snappy(duration: 0.2), value: canSend)
     }
 
     private func bubble(_ m: Message) -> some View {

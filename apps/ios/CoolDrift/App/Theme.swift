@@ -91,6 +91,16 @@ extension View {
         }
     }
 
+    /// A Liquid Glass background on iOS 26+, frosted material before that.
+    @ViewBuilder func glassBackground(in shape: some Shape) -> some View {
+        if #available(iOS 26, *) {
+            glassEffect(.regular, in: shape)
+        } else {
+            background(.regularMaterial, in: shape)
+                .overlay(shape.stroke(.white.opacity(0.6), lineWidth: 0.5))
+        }
+    }
+
     /// A white box with a thin border, used for each section on a screen.
     func card() -> some View {
         padding(16)

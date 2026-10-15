@@ -1,4 +1,4 @@
-// RootView.swift — the 4 tabs, and the ⚙️ Settings sheet.
+// RootView.swift — the 5 tabs: Home, Cool Spots, Routes, Ask, and More (settings).
 // The system TabView gives the floating Liquid Glass tab bar on iOS 26+
 // (and the normal tab bar on older iOS).
 // It also keeps the heat data fresh: on launch, every 15 minutes, and when you come back to the app.
@@ -27,18 +27,20 @@ struct RootView: View {
                 screen("CoolDrift") { HomeView() }
             }
             Tab(t("tabs.spots"), systemImage: "map.fill", value: AppRouter.TabID.spots) {
-                screen(t("tabs.spots")) { SpotsView() }
+                screen(t("tabs.spots"), overMap: true) { SpotsView() }
             }
             Tab(t("tabs.routes"), systemImage: "figure.walk", value: AppRouter.TabID.routes) {
-                screen(t("tabs.routes")) { RoutesView() }
+                screen(t("tabs.routes"), overMap: true) { RoutesView() }
             }
             Tab(t("tabs.chat"), systemImage: "bubble.left.and.bubble.right.fill", value: AppRouter.TabID.chat) {
                 screen(t("tabs.chat")) { ChatView() }
             }
+            Tab(t("tabs.more"), systemImage: "square.grid.2x2.fill", value: AppRouter.TabID.more) {
+                NavigationStack { MoreView() }
+            }
         }
         .tint(Theme.primary)
         .minimizeTabBarOnScroll()
-        .sheet(isPresented: $router.showSettings) { SettingsView() }
         .dynamicTypeSize(settings.bigText ? .xxxLarge ... .accessibility5 : .xSmall ... .accessibility5)
         .task {
             // First check, then every 15 minutes while the app is open.
@@ -65,21 +67,13 @@ struct RootView: View {
         }
     }
 
-    /// Each tab has its own title bar with the ⚙️ button.
-    private func screen(_ title: String, @ViewBuilder content: () -> some View) -> some View {
+    /// Each tab has its own title bar. Over a full-screen map there's no bar at all.
+    private func screen(_ title: String, overMap: Bool = false, @ViewBuilder content: () -> some View) -> some View {
         NavigationStack {
             content()
-                .navigationTitle(title)
+                .navigationTitle(title) // still read out by VoiceOver
                 .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button {
-                            router.showSettings = true
-                        } label: {
-                            Label(t("common.settings"), systemImage: "gearshape")
-                        }
-                    }
-                }
+                .toolbar(overMap ? .hidden : .automatic, for: .navigationBar)
         }
     }
 }

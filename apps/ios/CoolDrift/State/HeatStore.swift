@@ -46,7 +46,7 @@ final class HeatStore {
 /// Which tab is open, and a place to route to (sent from Home or Cool Spots).
 @Observable
 final class AppRouter {
-    enum TabID: Hashable { case home, spots, routes, chat }
+    enum TabID: Hashable { case home, spots, routes, chat, more }
 
     struct Destination: Equatable {
         let id = UUID() // a new id makes Routes plan again, even for the same place
@@ -56,7 +56,6 @@ final class AppRouter {
 
     var tab = TabID.home
     var destination: Destination?
-    var showSettings = false
 
     /// Opens the Routes tab and plans a cool route to this spot.
     func route(to spot: CoolSpot) {

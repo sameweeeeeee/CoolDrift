@@ -131,7 +131,7 @@ private struct StatsCard: View {
 
     private func stat(_ label: String, _ value: Double?, _ unit: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(value.map { "\(($0 * 10).rounded() / 10)\(unit)" } ?? "—")
+            Text(verbatim: value.map { $0.formatted(.number.precision(.fractionLength(0...1))) + unit } ?? "—")
                 .font(.title.bold())
                 .foregroundStyle(Theme.text)
             Text(label).font(.subheadline).foregroundStyle(Theme.textMuted).lineLimit(1)

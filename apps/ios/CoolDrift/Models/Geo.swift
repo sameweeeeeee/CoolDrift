@@ -56,6 +56,14 @@ enum Geo {
         return (sqrt(dx * dx + dy * dy), t)
     }
 
+    /// Compass direction from A to B in degrees (0 = north, 90 = east).
+    static func bearing(_ a: LatLng, _ b: LatLng) -> Double {
+        let lat1 = rad(a.latitude), lat2 = rad(b.latitude), dLng = rad(b.longitude - a.longitude)
+        let y = sin(dLng) * cos(lat2)
+        let x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLng)
+        return (atan2(y, x) * 180 / .pi + 360).truncatingRemainder(dividingBy: 360)
+    }
+
     /// Shortest distance from a point to any point on a path (checks every vertex).
     static func distanceToPath(_ p: LatLng, _ path: [LatLng]) -> Double {
         path.map { distance(p, $0) }.min() ?? .infinity

@@ -144,6 +144,7 @@ xcodegen generate
 - Choose **Walk** or **Cycle**, then **Find cool route**.
 - **Green line** = the cool route through cool spots. **Turquoise pins** = rest stops. **Grey dashed line** = the normal fastest route, for comparison.
 - The summary shows the time, distance, number of rest stops, the % of the route near a cool spot, and how many extra minutes the cooler route takes.
+- **iOS app only: Go.** Turn-by-turn directions like Apple Maps: a list of every turn and rest stop, then a banner with the next turn and its distance, a map that follows you, each turn read aloud, and your arrival time. Directions come from the same free OSRM server, so unnamed footpaths just say "Turn right".
 
 **The trade-off we chose (and why):**
 We don't have data on every shady path in Singapore, so true "shade-aware" routing isn't possible yet. Instead:
@@ -168,7 +169,7 @@ We don't have data on every shady path in Singapore, so true "shade-aware" routi
   - It is **rule-based** (keyword matching), not paid AI. It answers using the live heat data.
   - Tap any answer to hear it read aloud.
 
-### ⚙️ Settings (gear icon, top right)
+### ⚙️ Settings (gear icon in the Expo app; the **More** tab in the iOS app)
 - Language: English, 中文, Bahasa Melayu, தமிழ்
 - Large text, Senior mode
 - High heat alert on/off, Outdoor worker mode, reminder interval, "Test reminder now"
@@ -288,6 +289,7 @@ apps/ios/
     │   └── L10n.swift           Translations (t("risk.high"))
     ├── Models/
     │   ├── Geo.swift            Distance maths + map camera helper
+    │   ├── RouteStep.swift      One turn-by-turn instruction (text + arrow icon)
     │   └── CoolSpot.swift       Loads + sorts the cool spots
     ├── Services/            THE LOGIC (same rules as the Expo app)
     │   ├── WeatherService.swift   data.gov.sg APIs, risk calculation, offline cache
@@ -304,11 +306,11 @@ apps/ios/
     ├── Views/               SCREENS
     │   ├── RootView.swift         The 4 tabs + Settings sheet
     │   ├── HomeView.swift         Home (heat card, tips, Senior mode)
-    │   ├── SpotsView.swift        Cool Spots map + list + heat reports
-    │   ├── RoutesView.swift       Cool Routes
+    │   ├── SpotsView.swift        Cool Spots: full-screen map + draggable list + heat reports
+    │   ├── RoutesView.swift       Cool Routes + turn-by-turn directions (Go)
     │   ├── ChatView.swift         Ask (chatbot)
-    │   ├── SettingsView.swift     Settings
-    │   └── Components/            Heat card, heat bars, icons, banners
+    │   ├── MoreView.swift         More tab: settings + "coming soon"
+    │   └── Components/            Heat card, draggable map panel, heat bars, icons, banners
     └── Resources/
         ├── coolSpots.json         Copy of apps/expo/src/data/coolSpots.json
         ├── Strings/*.json         Translations, exported from apps/expo/src/i18n

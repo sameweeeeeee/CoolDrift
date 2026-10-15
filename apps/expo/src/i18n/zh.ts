@@ -3,7 +3,7 @@
 import type { PartialTranslations } from './index';
 
 const zh: PartialTranslations = {
-  tabs: { home: '首页', spots: '清凉点', routes: '路线', chat: '问答' },
+  tabs: { home: '首页', spots: '清凉点', routes: '路线', chat: '问答', more: '更多' },
   common: {
     settings: '设置',
     loading: '正在检查高温…',
@@ -127,6 +127,39 @@ const zh: PartialTranslations = {
     restTitle: '💧 休息时间',
     restBody: '在阴凉处休息10分钟，喝一杯水。',
     restSpeech: '休息时间到了。请在阴凉处休息，喝点水。',
+  },
+  nav: {
+    go: '出发',
+    end: '结束',
+    directions: '路线指引',
+    arrived: '您已到达',
+    arrive: '到达',
+    then: '然后',
+    start: '从您的位置出发',
+    depart: '沿%{road}出发',
+    turn: '%{dir}进入%{road}',
+    turnNoRoad: '%{dir}',
+    keep: '靠%{dir}进入%{road}',
+    keepNoRoad: '靠%{dir}',
+    continue: '沿%{road}继续前行',
+    continueNoRoad: '继续直行',
+    roundabout: '在环岛驶出进入%{road}',
+    roundaboutNoRoad: '通过环岛',
+    uturn: '掉头',
+    rest: '休息点：%{name}',
+    arriveAt: '到达%{name}',
+    dir: {
+      left: '左转',
+      right: '右转',
+      slightLeft: '稍向左转',
+      slightRight: '稍向右转',
+      sharpLeft: '向左急转',
+      sharpRight: '向右急转',
+    },
+  },
+  more: {
+    soonTitle: '即将推出',
+    soon: '更多功能即将推出。',
   },
 };
 
