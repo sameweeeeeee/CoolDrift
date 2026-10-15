@@ -53,7 +53,7 @@ export default function CoolMap({ initialCenter, points = [], circles = [], line
             key={p.id}
             center={[p.latitude, p.longitude]}
             radius={p.kind === 'dest' ? 11 : 9}
-            pathOptions={{ color: colors.white, weight: 3, fillColor: PIN_COLOR[p.kind], fillOpacity: 1 }}
+            pathOptions={{ color: colors.white, weight: 3, fillColor: p.color ?? PIN_COLOR[p.kind], fillOpacity: 1 }}
           >
             {p.title && (
               <Tooltip>

@@ -57,7 +57,7 @@ export default function CoolMap({ initialCenter, points = [], circles = [], line
           coordinate={p}
           title={p.title}
           description={p.description}
-          pinColor={NATIVE_PIN[p.kind] ?? PIN_COLOR[p.kind]}
+          pinColor={p.color ?? NATIVE_PIN[p.kind] ?? PIN_COLOR[p.kind]}
         />
       ))}
     </MapView>

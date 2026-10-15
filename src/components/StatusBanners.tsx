@@ -5,19 +5,22 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AppText from './AppText';
-import { colors } from '../theme';
+import FadeIn from './ui/FadeIn';
+import { colors, radius } from '../theme';
 import { useHeat } from '../context/HeatContext';
 import { useSettings, useT } from '../context/SettingsContext';
 import { formatTime } from '../utils/summary';
 
-function Banner({ icon, text, color }: { icon: keyof typeof Ionicons.glyphMap; text: string; color: string }) {
+function Banner({ icon, text, color, tint }: { icon: keyof typeof Ionicons.glyphMap; text: string; color: string; tint: string }) {
   return (
-    <View style={[styles.banner, { borderColor: color }]}>
-      <Ionicons name={icon} size={22} color={color} />
-      <AppText size="small" style={{ flex: 1 }}>
-        {text}
-      </AppText>
-    </View>
+    <FadeIn from="left">
+      <View style={[styles.banner, { backgroundColor: tint }]}>
+        <Ionicons name={icon} size={22} color={color} />
+        <AppText size="small" bold color={color} style={{ flex: 1 }}>
+          {text}
+        </AppText>
+      </View>
+    </FadeIn>
   );
 }
 
@@ -28,15 +31,16 @@ export default function StatusBanners() {
 
   return (
     <>
-      {settings.demoHigh && <Banner icon="flask" text={t('risk.demo')} color={colors.high} />}
+      {settings.demoHigh && <Banner icon="flask" text={t('risk.demo')} color={colors.high} tint="#FDECEC" />}
       {(locationStatus === 'denied' || locationStatus === 'error') && (
-        <Banner icon="location-outline" text={t('common.locationDenied')} color={colors.moderate} />
+        <Banner icon="location" text={t('common.locationDenied')} color="#7A4A00" tint="#FFF4E0" />
       )}
       {reading?.fromCache && (
         <Banner
-          icon="cloud-offline-outline"
+          icon="cloud-offline"
           text={t('common.offline', { time: formatTime(reading.observedAt) })}
-          color={colors.moderate}
+          color="#7A4A00"
+          tint="#FFF4E0"
         />
       )}
     </>
@@ -47,10 +51,9 @@ const styles = StyleSheet.create({
   banner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    borderWidth: 2,
-    borderRadius: 12,
-    padding: 10,
-    backgroundColor: colors.white,
+    gap: 10,
+    borderRadius: radius.button,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
   },
 });

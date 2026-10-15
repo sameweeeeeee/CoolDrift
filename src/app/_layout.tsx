@@ -12,6 +12,7 @@ import { ALERT_VIBRATION, onRestReminder, setupNotifications } from '../services
 import { registerBackgroundCheck } from '../services/backgroundCheck';
 import { speak } from '../services/speech';
 import { colors } from '../theme';
+import HeaderBackground from '../components/ui/HeaderBackground';
 
 /** Listens for rest reminders while the app is open and reads them aloud. */
 function ReminderVoice() {
@@ -50,10 +51,11 @@ function Screens() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: colors.primary },
+        headerBackground: HeaderBackground,
         headerTintColor: colors.white,
-        headerTitleStyle: { fontWeight: '700' },
-        contentStyle: { backgroundColor: colors.primaryLight },
+        headerTitleStyle: { fontWeight: '800' },
+        headerShadowVisible: false,
+        contentStyle: { backgroundColor: colors.background },
       }}
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

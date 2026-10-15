@@ -123,13 +123,13 @@ export async function planCoolRoute(from: LatLng, to: LatLng, mode: TravelMode):
 
     // Also count any other cool spots the route passes close to as rest stops
     // (but not ones right at the start or the destination — you're already there!).
-    const passing = COOL_SPOTS.filter(
-      (s) =>
-        !stops.includes(s) &&
-        distanceM(s, from) > 200 &&
-        distanceM(s, to) > 200 &&
-        distanceToPathM(s, cool.path) <= 150,
-    );
+    // Only the 4 closest, so the list stays short and useful.
+    const passing = COOL_SPOTS.filter((s) => !stops.includes(s) && distanceM(s, from) > 200 && distanceM(s, to) > 200)
+      .map((s) => ({ spot: s, away: distanceToPathM(s, cool.path) }))
+      .filter((p) => p.away <= 150)
+      .sort((a, b) => a.away - b.away)
+      .slice(0, 4)
+      .map((p) => p.spot);
     return {
       fastest,
       cool,

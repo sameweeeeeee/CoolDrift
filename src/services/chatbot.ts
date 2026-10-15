@@ -7,7 +7,7 @@
 
 import { t, tList } from '../i18n';
 import { HeatReading, RiskLevel } from './weather';
-import { nearestSpot } from './coolSpots';
+import { CoolingType, nearestSpot } from './coolSpots';
 import { LatLng, formatDistance } from '../utils/geo';
 
 type Intent = 'emergency' | 'safe' | 'nearest' | 'temp' | 'water' | 'route' | 'tips' | 'hello';
@@ -24,11 +24,29 @@ const KEYWORDS: [Intent, string[]][] = [
   ['hello', ['hi', 'hello', 'hey', '你好', 'helo', 'hai', 'வணக்கம்']],
 ];
 
+// Words that mean the user wants a certain KIND of cool place.
+const COOLING_WORDS: [CoolingType, string[]][] = [
+  ['aircon', ['aircon', 'air-con', 'air con', 'air conditioned', 'air-conditioned', 'indoor', 'indoors', '冷气', '空调', 'berhawa dingin', 'ஏசி', 'குளிரூட்ட']],
+  ['shaded', ['shade', 'shaded', 'shady', 'roof', 'covered', 'hawker', '阴凉', '遮', '小贩', 'teduh', 'berteduh', 'நிழல்']],
+  ['green', ['park', 'parks', 'green', 'tree', 'trees', 'garden', 'nature', '公园', '绿', 'taman', 'hijau', 'பூங்கா', 'பசுமை']],
+];
+
 /** Finds which intent a question matches, or null if none. */
 export function detectIntent(question: string): Intent | null {
   const q = question.toLowerCase();
   for (const [intent, words] of KEYWORDS) {
     if (words.some((w) => matches(q, w))) return intent;
+  }
+  // "Any parks?" has no "nearest" word, but clearly asks for a place.
+  if (detectCooling(question)) return 'nearest';
+  return null;
+}
+
+/** Finds if the question asks for air-con, shade or green, or null for "any". */
+export function detectCooling(question: string): CoolingType | null {
+  const q = question.toLowerCase();
+  for (const [cooling, words] of COOLING_WORDS) {
+    if (words.some((w) => matches(q, w))) return cooling;
   }
   return null;
 }
@@ -38,7 +56,7 @@ export function detectIntent(question: string): Intent | null {
  * Chinese and Tamil don't use spaces between words, so we just search inside the text.
  */
 function matches(text: string, word: string): boolean {
-  if (/^[a-z ]+$/.test(word)) return new RegExp(`\\b${word}\\b`).test(text);
+  if (/^[a-z -]+$/.test(word)) return new RegExp(`\\b${word}\\b`).test(text);
   return text.includes(word);
 }
 
@@ -55,10 +73,12 @@ export function answer(question: string, ctx: ChatContext): string {
     case 'safe':
       return ctx.risk ? t(`chat.a.safe_${ctx.risk}`) : t('chat.a.noData');
     case 'nearest': {
-      const spot = nearestSpot(ctx.location);
+      // e.g. "nearest park?" → only look at green areas
+      const spot = nearestSpot(ctx.location, detectCooling(question));
       return t('chat.a.nearest', {
         name: spot.name,
         type: t(`spots.types.${spot.type}`),
+        cooling: t(`cooling.${spot.cooling}`),
         dist: formatDistance(spot.distance),
         note: spot.note ?? '',
       });

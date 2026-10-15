@@ -1,10 +1,13 @@
 // BigButton.tsx — a large, easy-to-tap button with an optional icon.
+// Main buttons have a green gradient and a shadow; they squish a little when pressed.
 
 import React from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View, ViewStyle } from 'react-native';
+import { ActivityIndicator, StyleSheet, View, ViewStyle } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import AppText from './AppText';
-import { colors, touchSize } from '../theme';
+import ScalePressable from './ui/ScalePressable';
+import { colors, gradients, radius, shadow, touchSize } from '../theme';
 import { useSettings } from '../context/SettingsContext';
 
 type Props = {
@@ -20,45 +23,54 @@ type Props = {
 
 export default function BigButton({ label, onPress, icon, variant = 'primary', loading, disabled, style, small }: Props) {
   const { textScale } = useSettings();
-  const bg = variant === 'primary' ? colors.primary : variant === 'danger' ? colors.high : colors.white;
-  const fg = variant === 'outline' ? colors.primary : colors.white;
+  const filled = variant !== 'outline';
+  const fg = filled ? colors.white : colors.primary;
 
   return (
-    <Pressable
+    <ScalePressable
       onPress={onPress}
       disabled={disabled || loading}
       accessibilityRole="button"
       accessibilityLabel={label}
-      style={({ pressed }) => [
+      style={[
         styles.button,
-        { backgroundColor: bg, minHeight: (small ? 44 : touchSize) * Math.min(textScale, 1.2) },
-        variant === 'outline' && styles.outline,
-        (pressed || disabled) && { opacity: 0.6 },
+        { minHeight: (small ? 46 : touchSize) * Math.min(textScale, 1.2) },
+        filled ? { boxShadow: shadow.button } : styles.outline,
+        disabled && { opacity: 0.5 },
         style,
       ]}
     >
+      {/* The gradient fills the button behind the text */}
+      {filled && (
+        <LinearGradient
+          colors={variant === 'danger' ? gradients.danger : gradients.primary}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[StyleSheet.absoluteFill, { borderRadius: radius.button }]}
+        />
+      )}
       {loading ? (
         <ActivityIndicator color={fg} />
       ) : (
         <View style={styles.row}>
-          {icon && <Ionicons name={icon} size={(small ? 20 : 26) * textScale} color={fg} />}
+          {icon && <Ionicons name={icon} size={(small ? 20 : 24) * textScale} color={fg} />}
           <AppText bold color={fg} size={small ? 'small' : 'large'} center>
             {label}
           </AppText>
         </View>
       )}
-    </Pressable>
+    </ScalePressable>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: 14,
+    borderRadius: radius.button,
     paddingHorizontal: 18,
     paddingVertical: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  outline: { borderWidth: 2, borderColor: colors.primary },
+  outline: { borderWidth: 2, borderColor: colors.primary, backgroundColor: colors.white },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, flexShrink: 1 },
 });

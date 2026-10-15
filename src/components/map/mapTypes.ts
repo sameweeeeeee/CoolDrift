@@ -11,6 +11,7 @@ export type MapPoint = LatLng & {
   kind: 'spot' | 'rest' | 'dest';
   title?: string;
   description?: string;
+  color?: string; // optional: overrides the colour from `kind` (e.g. blue for air-con spots)
 };
 
 /** A hot spot report, drawn as a coloured circle. Level 1 = warm … 3 = very hot. */

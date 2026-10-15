@@ -18,10 +18,12 @@ import { CoolSpotWithDistance, SPOT_ICON, SpotType, spotsByDistance } from '../.
 import { HotLevel, HotSpotReport, addReport, loadReports } from '../../services/reports';
 import { LatLng, formatDistance } from '../../utils/geo';
 import { useIsDesktop } from '../../utils/useIsDesktop';
-import { colors } from '../../theme';
+import { colors, coolingColor } from '../../theme';
 
 // Button colours for "how hot": dark enough for white text to be readable.
 const HEAT_SOLID: Record<HotLevel, string> = { 1: '#8A6D00', 2: '#B34700', 3: colors.high };
+
+const MAP_PIN_LIMIT = 80;
 
 const TYPES: SpotType[] = ['community_centre', 'library', 'mall', 'hawker', 'park', 'water_point'];
 
@@ -84,9 +86,11 @@ export default function SpotsScreen() {
         focus={focus}
         onPress={onMapPress}
         points={[
-          ...spots.map((s) => ({
+          // Only the 80 nearest go on the map, so phones stay smooth (the list still has all of them).
+          ...spots.slice(0, MAP_PIN_LIMIT).map((s) => ({
             id: s.id,
             kind: 'spot' as const,
+            color: coolingColor[s.cooling], // blue = air-con, brown = shaded, green = green area
             latitude: s.latitude,
             longitude: s.longitude,
             title: s.name,

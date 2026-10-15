@@ -83,12 +83,20 @@ This creates a `dist-web/` folder. Upload that folder to any static web host. Te
 | WBGT heat stress | `https://api-open.data.gov.sg/v2/real-time/api/weather?api=wbgt` |
 
 - **How the risk is decided:** we use NEA's **WBGT** (Wet Bulb Globe Temperature) levels: below 31°C = Low, 31–33°C = Moderate, 33°C and above = High. If WBGT isn't available, we work out a "feels like" **heat index** from temperature and humidity instead.
-- Shows 3 safety tips for the current level, plus the nearest cool place.
+- Shows 3 safety tips for the current level, plus the **nearest Air-con, Shaded and Green place**. Tap one for a cool route.
 - **Read aloud** speaks the advice using the phone's own voice.
 - Pull down to refresh. The app checks again **every 15 minutes** while it's open.
 
 ### 🗺️ Cool Spots: map, list and crowdsourced heat map
-- Green pins show cool places: community centres, libraries, malls, hawker centres, sheltered parks and water points.
+- **533 cool places**, each sorted into one of **3 cooling types** (as our mentor suggested):
+
+| Cooling type | Colour | What's in it | Source |
+|---|---|---|---|
+| ❄️ **Air-con** | Blue | 122 Community Clubs, plus sample libraries and malls | Community Clubs: **real data** (People's Association) |
+| ⛱️ **Shaded** | Brown | 123 Hawker Centres (roofed, with fans), sheltered water point | Hawker Centres: **real data** (NEA) |
+| 🌳 **Green area** | Green | 272 Parks with trees and shelters (no air-con used!) | Parks: **real data** (NParks) |
+
+- The map shows the 80 nearest places, coloured by cooling type. The list below has all of them, **sorted by distance**.
 - The list is **sorted by distance**. Tap a place to see it on the map, or tap **Route** to go there.
 - **Report hot spot:** tap the map (or "Use my location"), then choose 🔥 Warm, 🔥🔥 Hot or 🔥🔥🔥 Very hot. Reports show as **coloured circles** (yellow, orange, red). Overlapping circles look stronger, like a heat map. Reports disappear after 24 hours.
 
@@ -117,6 +125,7 @@ We don't have data on every shady path in Singapore, so true "shade-aware" routi
 ### 👵 Senior mode and Ask (chatbot)
 - **Senior mode** (Settings) gives a much simpler Home screen: a huge meter, a giant **Read aloud** button, one main tip, and the nearest cool place. It reads the advice aloud when opened, and all text gets bigger.
 - **Ask tab:** a simple chat. Tap a big question button or type, e.g. *"Is it safe to go out?"*, *"Where is the nearest cool place?"*, *"How hot is it now?"*, *"I feel dizzy"*.
+  - It understands cooling types too, e.g. *"Nearest air-con place?"*, *"Any parks near me?"*, *"Where's some shade?"*
   - It is **rule-based** (keyword matching in `src/services/chatbot.ts`), not paid AI. It answers using the live heat data.
   - Tap any answer to hear it read aloud.
 
@@ -154,6 +163,8 @@ CoolDrift/
 ├── package.json             List of libraries used
 ├── README.md                This file
 ├── DEMO_SCRIPT.md           2-minute demo for judges
+├── scripts/
+│   └── importOfficialData.mjs   Downloads real CCs, hawker centres and parks (npm run update:data)
 └── src/
     ├── app/                 SCREENS (each file = one screen, using Expo Router)
     │   ├── _layout.tsx        Wraps the app, sets up notifications + reminder voice
@@ -165,6 +176,13 @@ CoolDrift/
     │       ├── routes.tsx       Cool Routes
     │       └── chat.tsx         Ask (chatbot)
     ├── components/          REUSABLE PIECES
+    │   ├── ui/                Design building blocks (use these for new screens!):
+    │   │   ├── Card.tsx           White card with soft shadow, fades in
+    │   │   ├── FadeIn.tsx         Fade + slide-in animation (use `delay` to stagger)
+    │   │   ├── ScalePressable.tsx Button that squishes when pressed + haptic buzz
+    │   │   └── HeaderBackground.tsx  Green gradient title bar
+    │   ├── CoolingBadge.tsx   ❄️/⛱️/🌳 coloured label + round icon
+    │   ├── CoolingFilter.tsx  All / Air-con / Shaded / Green filter buttons
     │   ├── map/               The map, with one version per device:
     │   │   ├── CoolMap.tsx        phones (react-native-maps)
     │   │   ├── CoolMap.web.tsx    computers (Leaflet + OpenStreetMap)
@@ -189,13 +207,14 @@ CoolDrift/
     │   ├── speech.ts          Read aloud (text-to-speech)
     │   └── chatbot.ts         Rule-based chatbot
     ├── data/
-    │   └── coolSpots.json     ⭐ The 33 sample cool places, in ONE file
+    │   └── coolSpots.json     ⭐ All 533 cool places, in ONE file (one per line)
     ├── i18n/                LANGUAGES
     │   ├── index.ts           Translation setup
     │   ├── en.ts              English (main file)
     │   ├── zh.ts / ms.ts / ta.ts   Chinese / Malay / Tamil (placeholders)
     ├── utils/
     │   ├── geo.ts             Distance maths
+    │   ├── motion.ts          Animation helpers + "Reduce Motion" check
     │   ├── useIsDesktop.ts    Is the screen wide? (switches to the desktop layout)
     │   └── summary.ts         Builds the sentence for "Read aloud"
     └── theme.ts             Colours and font sizes (green + white)
@@ -205,7 +224,8 @@ CoolDrift/
 
 ## 6. How to change things
 
-- **Use a real list of cool places:** replace the `spots` list in `src/data/coolSpots.json` with the same fields (`id, name, type, latitude, longitude, note`). Good sources are data.gov.sg datasets for community clubs, libraries, hawker centres and parks.
+- **Refresh the real data** (community clubs, hawker centres, parks): run `npm run update:data`. It downloads the latest lists from data.gov.sg and updates `src/data/coolSpots.json`. Libraries, malls and water points are hand-made samples. Edit them in the same file using the same fields (`id, name, type, cooling, latitude, longitude, note`). `cooling` must be `aircon`, `shaded` or `green`.
+- **Design and animations:** colours, gradients, shadows and corner sizes are all in `src/theme.ts`. To make something animate in, wrap it in `<FadeIn delay={200}>`. For a card with a shadow, use `<Card>`. For a button that squishes, use `<ScalePressable>`. All animations switch off automatically if the phone has **Reduce Motion** turned on (some seniors feel dizzy with moving screens).
 - **Share hot spot reports between phones:** fill in `syncReportToBackend()` and `fetchSharedReports()` at the bottom of `src/services/reports.ts` (e.g. with Firebase). ⚠️ This needs a Firebase project and API key, so check with the team first.
 - **Fix a translation:** edit `src/i18n/zh.ts`, `ms.ts` or `ta.ts`. The Chinese, Malay and Tamil text are **placeholder translations**, so please ask a native speaker to check them. Missing lines show in English.
 - **Teach the chatbot new questions:** add keywords to `KEYWORDS` in `src/services/chatbot.ts`, and an answer in `src/i18n/en.ts` under `chat.a`.
@@ -214,10 +234,13 @@ CoolDrift/
 ## 7. Libraries used (all free)
 Expo SDK 57, Expo Router, react-native-maps, expo-location, expo-notifications, expo-speech, expo-background-task, AsyncStorage, i18n-js, expo-localization. On computers: react-native-web, Leaflet and react-leaflet.
 
+**Data credits:** Contains information from *Community Club / PAssion WaVe Outlet* (People's Association), *Hawker Centres* (NEA) and *Parks* (NParks), accessed from data.gov.sg and made available under the [Singapore Open Data Licence v1.0](https://data.gov.sg/open-data-licence).
+
 **Free outside services:** data.gov.sg real-time weather APIs, the OSRM routing server at routing.openstreetmap.de, and OpenStreetMap map tiles on the desktop version. These are community-run and fair use, so don't spam them. No API keys are needed.
 
 ## 8. Known limits (good to mention to judges)
-- The cool spot coordinates are **approximate sample data**.
+- Libraries, malls and water points are **approximate sample data**. Community clubs, hawker centres and parks are real.
+- Community clubs are counted as "Air-con" because they have air-conditioned lobbies and halls, but opening hours vary.
 - iOS controls when background checks run, so alerts are most reliable while the app is open.
 - The map heat layer uses circles (they work on both iPhone and Android in Expo Go) instead of a true blurred heat map, which needs Google Maps.
 - The text-to-speech voices for Tamil and Malay depend on what the phone has installed.

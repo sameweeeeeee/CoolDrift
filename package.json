@@ -14,6 +14,7 @@
     "expo-constants": "~57.0.22",
     "expo-font": "~57.0.4",
     "expo-haptics": "~57.0.3",
+    "expo-linear-gradient": "~57.0.2",
     "expo-linking": "~57.0.13",
     "expo-localization": "~57.0.2",
     "expo-location": "~57.0.21",
@@ -47,7 +48,8 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "desktop": "expo start --web",
-    "build:desktop": "expo export --platform web --output-dir dist-web"
+    "build:desktop": "expo export --platform web --output-dir dist-web",
+    "update:data": "node scripts/importOfficialData.mjs"
   },
   "private": true
 }
