@@ -7,19 +7,60 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.cooldrift.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "CoolDrift uses your location on this phone only, to show heat risk and cool places near you.",
+        "UIBackgroundModes": [
+          "fetch",
+          "processing"
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#E8F5EC",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.cooldrift.app",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "VIBRATE"
+      ]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "output": "single",
+      "name": "CoolDrift",
+      "themeColor": "#1B7A43",
+      "backgroundColor": "#E8F5EC"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-localization",
+      "expo-background-task",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "CoolDrift uses your location on this phone only, to show heat risk and cool places near you."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#1B7A43"
+        }
+      ],
+      "expo-font"
+    ],
+    "scheme": "cooldrift",
+    "experiments": {
+      "typedRoutes": false
     }
   }
 }

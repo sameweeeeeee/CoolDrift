@@ -1,0 +1,44 @@
+{
+  "_about": "SAMPLE DATA for the CoolDrift prototype. Coordinates are approximate. To use a real dataset, replace the 'spots' list below with the same fields: id, name, type, latitude, longitude, note. Allowed types: community_centre, library, mall, hawker, park, water_point.",
+  "spots": [
+    { "id": "lib-tpy", "name": "Toa Payoh Public Library", "type": "library", "latitude": 1.3326, "longitude": 103.8488, "note": "Seats, water cooler, toilets" },
+    { "id": "lib-orchard", "name": "library@orchard", "type": "library", "latitude": 1.3006, "longitude": 103.8395, "note": "Inside orchardgateway" },
+    { "id": "lib-jurong", "name": "Jurong Regional Library", "type": "library", "latitude": 1.3328, "longitude": 103.7408, "note": "Large reading area" },
+    { "id": "lib-tampines", "name": "Tampines Regional Library", "type": "library", "latitude": 1.3532, "longitude": 103.9401, "note": "At Our Tampines Hub" },
+    { "id": "lib-woodlands", "name": "Woodlands Regional Library", "type": "library", "latitude": 1.4360, "longitude": 103.7863, "note": "Near Woodlands MRT" },
+    { "id": "lib-national", "name": "National Library", "type": "library", "latitude": 1.2977, "longitude": 103.8545, "note": "Victoria Street" },
+    { "id": "lib-amk", "name": "Ang Mo Kio Public Library", "type": "library", "latitude": 1.3747, "longitude": 103.8456, "note": "Seats, toilets" },
+
+    { "id": "cc-bishan", "name": "Bishan Community Club", "type": "community_centre", "latitude": 1.3500, "longitude": 103.8459, "note": "Sheltered seating" },
+    { "id": "cc-tpy", "name": "Toa Payoh Central CC", "type": "community_centre", "latitude": 1.3350, "longitude": 103.8470, "note": "Sheltered seating" },
+    { "id": "cc-amk", "name": "Ang Mo Kio Community Centre", "type": "community_centre", "latitude": 1.3667, "longitude": 103.8395, "note": "Rest area" },
+    { "id": "cc-tampines", "name": "Tampines West CC", "type": "community_centre", "latitude": 1.3496, "longitude": 103.9365, "note": "Rest area" },
+    { "id": "cc-bedok", "name": "Bedok Community Centre", "type": "community_centre", "latitude": 1.3263, "longitude": 103.9353, "note": "Rest area" },
+    { "id": "cc-jurong", "name": "Jurong Green CC", "type": "community_centre", "latitude": 1.3492, "longitude": 103.7302, "note": "Rest area" },
+
+    { "id": "hw-maxwell", "name": "Maxwell Food Centre", "type": "hawker", "latitude": 1.2803, "longitude": 103.8448, "note": "Shaded seats, drinks" },
+    { "id": "hw-laupasat", "name": "Lau Pa Sat", "type": "hawker", "latitude": 1.2806, "longitude": 103.8504, "note": "Shaded seats, fans" },
+    { "id": "hw-oldairport", "name": "Old Airport Road Food Centre", "type": "hawker", "latitude": 1.3080, "longitude": 103.8856, "note": "Shaded seats, drinks" },
+    { "id": "hw-tiongbahru", "name": "Tiong Bahru Market", "type": "hawker", "latitude": 1.2850, "longitude": 103.8326, "note": "Shaded seats, drinks" },
+    { "id": "hw-chinatown", "name": "Chinatown Complex Food Centre", "type": "hawker", "latitude": 1.2823, "longitude": 103.8430, "note": "Shaded seats, drinks" },
+    { "id": "hw-newton", "name": "Newton Food Centre", "type": "hawker", "latitude": 1.3120, "longitude": 103.8395, "note": "Open-air, shaded" },
+    { "id": "hw-tekka", "name": "Tekka Centre", "type": "hawker", "latitude": 1.3062, "longitude": 103.8507, "note": "Shaded seats, drinks" },
+
+    { "id": "mall-ion", "name": "ION Orchard", "type": "mall", "latitude": 1.3040, "longitude": 103.8318, "note": "Indoor seating" },
+    { "id": "mall-plazasing", "name": "Plaza Singapura", "type": "mall", "latitude": 1.3006, "longitude": 103.8452, "note": "Indoor seating" },
+    { "id": "mall-bugis", "name": "Bugis Junction", "type": "mall", "latitude": 1.2993, "longitude": 103.8555, "note": "Covered street" },
+    { "id": "mall-j8", "name": "Junction 8", "type": "mall", "latitude": 1.3504, "longitude": 103.8487, "note": "Next to Bishan MRT" },
+    { "id": "mall-tampines", "name": "Tampines Mall", "type": "mall", "latitude": 1.3525, "longitude": 103.9447, "note": "Indoor seating" },
+    { "id": "mall-jurongpoint", "name": "Jurong Point", "type": "mall", "latitude": 1.3398, "longitude": 103.7066, "note": "Indoor seating" },
+    { "id": "mall-northpoint", "name": "Northpoint City", "type": "mall", "latitude": 1.4291, "longitude": 103.8357, "note": "Indoor seating" },
+
+    { "id": "park-bamk", "name": "Bishan-Ang Mo Kio Park", "type": "park", "latitude": 1.3627, "longitude": 103.8435, "note": "Shelters, trees, river breeze" },
+    { "id": "park-fortcanning", "name": "Fort Canning Park", "type": "park", "latitude": 1.2945, "longitude": 103.8462, "note": "Big shady trees" },
+    { "id": "park-eastcoast", "name": "East Coast Park (Area C)", "type": "park", "latitude": 1.3010, "longitude": 103.9120, "note": "Shelters, sea breeze" },
+    { "id": "park-tpytown", "name": "Toa Payoh Town Park", "type": "park", "latitude": 1.3333, "longitude": 103.8460, "note": "Pavilions, pond" },
+    { "id": "park-botanic", "name": "Singapore Botanic Gardens", "type": "park", "latitude": 1.3138, "longitude": 103.8159, "note": "Shady paths, shelters" },
+
+    { "id": "wp-marina", "name": "Marina Barrage (water point)", "type": "water_point", "latitude": 1.2806, "longitude": 103.8711, "note": "Drinking fountain, shelter" },
+    { "id": "wp-kallang", "name": "Kallang Riverside Park (water point)", "type": "water_point", "latitude": 1.3030, "longitude": 103.8670, "note": "Drinking fountain" }
+  ]
+}
