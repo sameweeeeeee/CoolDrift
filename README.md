@@ -11,9 +11,20 @@ CoolDrift helps **outdoor workers** (such as delivery riders) and **elderly peop
 
 It is software only. It uses free government weather data and has **no account, no login, and no paid services**.
 
+There are two versions of the app in this repo:
+
+| Folder | What it is | Runs on |
+|---|---|---|
+| `apps/expo` | The original app, built with Expo (React Native) | iPhone and Android (via Expo Go), and computers (web browser) |
+| `apps/ios` | A native rewrite in Swift and SwiftUI | iPhone and iPad (iOS 18+; Liquid Glass tab bar on iOS 26+) |
+
+Both have the same features (section 2).
+
 ---
 
 ## 1. How to run it
+
+### Expo app (phone)
 
 You need:
 - A computer with **Node.js** (version 20 or newer): https://nodejs.org
@@ -36,7 +47,7 @@ When the app asks, tap **Allow** for location and notifications.
 
 > If the QR code doesn't connect (for example on school Wi-Fi), try `npx expo start --tunnel`.
 
-### 💻 Desktop version (laptop or computer)
+### 💻 Expo app on a computer (desktop version)
 
 The same app also runs in a desktop web browser (Chrome, Edge, Safari or Firefox), so judges can try it on a laptop. It's the same code, with a wide-screen layout.
 
@@ -60,7 +71,7 @@ This creates a `dist-web/` folder. Upload that folder to any static web host. Te
 
 | | Phone (Expo Go) | Computer (browser) |
 |---|---|---|
-| Layout | Tabs at the bottom | Tabs down the left side; map and list side by side |
+| Layout | Floating glass tab bar at the bottom | Tabs down the left side; map and list side by side |
 | Map | Apple Maps / Google Maps | OpenStreetMap (via Leaflet, free, no key) |
 | High heat alert | Notification + vibration | Browser pop-up notification (most laptops can't vibrate) |
 | Rest reminders | Keep working when the app is closed | Only while the CoolDrift tab is open |
@@ -68,12 +79,40 @@ This creates a `dist-web/` folder. Upload that folder to any static web host. Te
 | Read aloud | Phone voice | Browser voice |
 | Location | Phone GPS | Browser location (Wi-Fi based, less exact) |
 
+### 📱 Native iOS app (Swift)
+
+You need a Mac with **Xcode 26** or newer.
+
+```bash
+open CoolDrift/apps/ios/CoolDrift.xcodeproj
+```
+
+Pick an iPhone simulator (or your own iPhone) at the top of Xcode and press **Run**. On a real iPhone, first choose your Apple team under **Signing & Capabilities**.
+
+The Xcode project is generated from `apps/ios/project.yml` with XcodeGen. After adding or removing Swift files, regenerate it:
+
+```bash
+brew install xcodegen
+cd CoolDrift/apps/ios
+xcodegen generate
+```
+
+**What's different from the Expo app:**
+
+| | Expo app | Native iOS app |
+|---|---|---|
+| Tab bar | Real iOS tab bar on iPhone, glass-style imitation on Android and web | Real iOS tab bar (Liquid Glass on iOS 26+, shrinks when you scroll) |
+| Map | react-native-maps | Apple Maps (MapKit) |
+| Settings screen | Custom screen | Standard iOS settings list |
+| Large text | App setting only | App setting, and also follows the iPhone's text size |
+| Android / computer | Yes | No (iPhone and iPad only) |
+
 ---
 
 ## 2. What each feature does
 
 ### 🌡️ Home: heat-risk meter
-- Shows **LOW / MODERATE / HIGH** heat risk for where you are.
+- Shows **LOW / MODERATE / HIGH** heat risk for where you are, with the most important tip right under it.
 - Uses **live data from data.gov.sg** (free, no API key), from the station nearest to you:
 
 | Data | API endpoint |
@@ -83,7 +122,7 @@ This creates a `dist-web/` folder. Upload that folder to any static web host. Te
 | WBGT heat stress | `https://api-open.data.gov.sg/v2/real-time/api/weather?api=wbgt` |
 
 - **How the risk is decided:** we use NEA's **WBGT** (Wet Bulb Globe Temperature) levels: below 31°C = Low, 31–33°C = Moderate, 33°C and above = High. If WBGT isn't available, we work out a "feels like" **heat index** from temperature and humidity instead.
-- Shows 3 safety tips for the current level, plus the **nearest Air-con, Shaded and Green place**. Tap one for a cool route.
+- Shows the live numbers (feels like, heat stress, temperature, humidity), the safety tips for the current level, and the **nearest Air-con, Shaded and Green place**. Tap one for a cool route.
 - **Read aloud** speaks the advice using the phone's own voice.
 - Pull down to refresh. The app checks again **every 15 minutes** while it's open.
 
@@ -97,8 +136,8 @@ This creates a `dist-web/` folder. Upload that folder to any static web host. Te
 | 🌳 **Green area** | Green | 272 Parks with trees and shelters (no air-con used!) | Parks: **real data** (NParks) |
 
 - The map shows the 80 nearest places, coloured by cooling type. The list below has all of them, **sorted by distance**.
-- The list is **sorted by distance**. Tap a place to see it on the map, or tap **Route** to go there.
-- **Report hot spot:** tap the map (or "Use my location"), then choose 🔥 Warm, 🔥🔥 Hot or 🔥🔥🔥 Very hot. Reports show as **coloured circles** (yellow, orange, red). Overlapping circles look stronger, like a heat map. Reports disappear after 24 hours.
+- Tap a place to see it on the map, or tap **Route** to go there.
+- **Report hot spot:** tap the map (or "Use my location"), then choose **Warm**, **Hot** or **Very hot** (shown as 1, 2 or 3 bars). Reports show as **coloured circles** (yellow, orange, red). Overlapping circles look stronger, like a heat map. Reports disappear after 24 hours.
 
 ### 🚶 Routes: cool routes
 - Tap the map to pick where you're going (or use "Show route" from Home or Cool Spots).
@@ -124,9 +163,9 @@ We don't have data on every shady path in Singapore, so true "shade-aware" routi
 
 ### 👵 Senior mode and Ask (chatbot)
 - **Senior mode** (Settings) gives a much simpler Home screen: a huge meter, a giant **Read aloud** button, one main tip, and the nearest cool place. It reads the advice aloud when opened, and all text gets bigger.
-- **Ask tab:** a simple chat. Tap a big question button or type, e.g. *"Is it safe to go out?"*, *"Where is the nearest cool place?"*, *"How hot is it now?"*, *"I feel dizzy"*.
+- **Ask tab:** a simple chat. Tap a question button or type, e.g. *"Is it safe to go out?"*, *"Where is the nearest cool place?"*, *"How hot is it now?"*, *"I feel dizzy"*.
   - It understands cooling types too, e.g. *"Nearest air-con place?"*, *"Any parks near me?"*, *"Where's some shade?"*
-  - It is **rule-based** (keyword matching in `src/services/chatbot.ts`), not paid AI. It answers using the live heat data.
+  - It is **rule-based** (keyword matching), not paid AI. It answers using the live heat data.
   - Tap any answer to hear it read aloud.
 
 ### ⚙️ Settings (gear icon, top right)
@@ -135,7 +174,7 @@ We don't have data on every shady path in Singapore, so true "shade-aware" routi
 - High heat alert on/off, Outdoor worker mode, reminder interval, "Test reminder now"
 - **Demo: Simulate High heat** (for presentations)
 - Delete my hot spot reports
-- All settings are saved on the phone (AsyncStorage).
+- All settings are saved on the phone.
 
 ---
 
@@ -159,9 +198,18 @@ We don't have data on every shady path in Singapore, so true "shade-aware" routi
 
 ```
 CoolDrift/
+├── README.md                This file
+└── apps/
+    ├── expo/                THE EXPO APP (phones + computers)
+    └── ios/                 THE NATIVE iOS APP (Swift + SwiftUI)
+```
+
+### Expo app (`apps/expo`)
+
+```
+apps/expo/
 ├── app.json                 App name, permissions, plugins
 ├── package.json             List of libraries used
-├── README.md                This file
 ├── DEMO_SCRIPT.md           2-minute demo for judges
 ├── scripts/
 │   └── importOfficialData.mjs   Downloads real CCs, hawker centres and parks (npm run update:data)
@@ -169,18 +217,21 @@ CoolDrift/
     ├── app/                 SCREENS (each file = one screen, using Expo Router)
     │   ├── _layout.tsx        Wraps the app, sets up notifications + reminder voice
     │   ├── settings.tsx       Settings screen
-    │   └── (tabs)/            The 4 bottom tabs
-    │       ├── _layout.tsx      Tab bar + settings gear button
+    │   └── (tabs)/            The 4 tabs
+    │       ├── _layout.tsx      Tab bar on Android + computers (glass bar / side bar)
+    │       ├── _layout.ios.tsx  Tab bar on iPhone (the real iOS tab bar)
     │       ├── index.tsx        Home (heat meter, tips, Senior mode)
     │       ├── spots.tsx        Cool Spots map + list + heat reports
     │       ├── routes.tsx       Cool Routes
     │       └── chat.tsx         Ask (chatbot)
     ├── components/          REUSABLE PIECES
     │   ├── ui/                Design building blocks (use these for new screens!):
-    │   │   ├── Card.tsx           White card with soft shadow, fades in
-    │   │   ├── FadeIn.tsx         Fade + slide-in animation (use `delay` to stagger)
+    │   │   ├── Card.tsx           White card with a thin border, fades in
+    │   │   ├── FadeIn.tsx         Fade + slide-in animation
     │   │   ├── ScalePressable.tsx Button that squishes when pressed + haptic buzz
-    │   │   └── HeaderBackground.tsx  Green gradient title bar
+    │   │   ├── GlassTabBar.tsx    Floating frosted-glass tab bar (Android + phone browsers)
+    │   │   ├── TabBarSafeArea.tsx Keeps bottom content above the tab bar
+    │   │   └── HeaderBackground.tsx  Green title bar
     │   ├── CoolingBadge.tsx   ❄️/⛱️/🌳 coloured label + round icon
     │   ├── CoolingFilter.tsx  All / Air-con / Shaded / Green filter buttons
     │   ├── map/               The map, with one version per device:
@@ -189,7 +240,7 @@ CoolDrift/
     │   │   └── mapTypes.ts        what you can draw on either map
     │   ├── AppText.tsx        Text that grows in large-text mode
     │   ├── BigButton.tsx      Big, easy-to-tap button
-    │   ├── RiskMeter.tsx      The Low/Moderate/High meter
+    │   ├── RiskMeter.tsx      The Low/Moderate/High heat card
     │   └── StatusBanners.tsx  Offline / location / demo notices
     ├── context/             SHARED DATA for all screens
     │   ├── SettingsContext.tsx  Settings (saved on phone) + translation hook
@@ -216,23 +267,67 @@ CoolDrift/
     │   ├── geo.ts             Distance maths
     │   ├── motion.ts          Animation helpers + "Reduce Motion" check
     │   ├── useIsDesktop.ts    Is the screen wide? (switches to the desktop layout)
+    │   ├── useTabBarSpace.ts  How much room the floating tab bar covers
     │   └── summary.ts         Builds the sentence for "Read aloud"
-    └── theme.ts             Colours and font sizes (green + white)
+    └── theme.ts             Colours, shadows and font sizes (green + white)
 ```
 
-**About the `.web.ts` files:** when a file has a twin ending in `.web.ts` or `.web.tsx`, Expo uses the `.web` one on computers and the normal one on phones. The rest of the app doesn't need to know which one it's using.
+**About the `.web.ts` and `.ios.tsx` files:** when a file has a twin ending in `.web.ts(x)` or `.ios.tsx`, Expo uses that one on computers (or iPhones) and the normal one everywhere else. The rest of the app doesn't need to know which one it's using.
+
+### Native iOS app (`apps/ios`)
+
+```
+apps/ios/
+├── project.yml              Xcode project settings (run `xcodegen generate` after changes)
+├── CoolDrift.xcodeproj      Generated from project.yml; open this in Xcode
+└── CoolDrift/
+    ├── Info.plist             Generated from project.yml (permissions, background check)
+    ├── App/
+    │   ├── CoolDriftApp.swift   Starts the app, notifications, background check
+    │   ├── Theme.swift          Colours + Liquid Glass button helpers
+    │   └── L10n.swift           Translations (t("risk.high"))
+    ├── Models/
+    │   ├── Geo.swift            Distance maths + map camera helper
+    │   └── CoolSpot.swift       Loads + sorts the cool spots
+    ├── Services/            THE LOGIC (same rules as the Expo app)
+    │   ├── WeatherService.swift   data.gov.sg APIs, risk calculation, offline cache
+    │   ├── LocationService.swift  GPS + permission handling
+    │   ├── RoutingService.swift   Cool route planning (OSRM)
+    │   ├── ReportStore.swift      Hot spot reports (+ backend hook)
+    │   ├── Notifier.swift         High heat alerts + worker reminders
+    │   ├── BackgroundCheck.swift  Heat check while the app is in the background
+    │   ├── Speech.swift           Read aloud
+    │   └── Chatbot.swift          Rule-based chatbot
+    ├── State/
+    │   ├── SettingsStore.swift    Settings (saved on phone)
+    │   └── HeatStore.swift        Location + weather + risk; which tab is open
+    ├── Views/               SCREENS
+    │   ├── RootView.swift         The 4 tabs + Settings sheet
+    │   ├── HomeView.swift         Home (heat card, tips, Senior mode)
+    │   ├── SpotsView.swift        Cool Spots map + list + heat reports
+    │   ├── RoutesView.swift       Cool Routes
+    │   ├── ChatView.swift         Ask (chatbot)
+    │   ├── SettingsView.swift     Settings
+    │   └── Components/            Heat card, heat bars, icons, banners
+    └── Resources/
+        ├── coolSpots.json         Copy of apps/expo/src/data/coolSpots.json
+        ├── Strings/*.json         Translations, exported from apps/expo/src/i18n
+        └── Assets.xcassets        App icon + accent colour
+```
 
 ## 6. How to change things
 
-- **Refresh the real data** (community clubs, hawker centres, parks): run `npm run update:data`. It downloads the latest lists from data.gov.sg and updates `src/data/coolSpots.json`. Libraries, malls and water points are hand-made samples. Edit them in the same file using the same fields (`id, name, type, cooling, latitude, longitude, note`). `cooling` must be `aircon`, `shaded` or `green`.
-- **Design and animations:** colours, gradients, shadows and corner sizes are all in `src/theme.ts`. To make something animate in, wrap it in `<FadeIn delay={200}>`. For a card with a shadow, use `<Card>`. For a button that squishes, use `<ScalePressable>`. All animations switch off automatically if the phone has **Reduce Motion** turned on (some seniors feel dizzy with moving screens).
-- **Share hot spot reports between phones:** fill in `syncReportToBackend()` and `fetchSharedReports()` at the bottom of `src/services/reports.ts` (e.g. with Firebase). ⚠️ This needs a Firebase project and API key, so check with the team first.
-- **Fix a translation:** edit `src/i18n/zh.ts`, `ms.ts` or `ta.ts`. The Chinese, Malay and Tamil text are **placeholder translations**, so please ask a native speaker to check them. Missing lines show in English.
-- **Teach the chatbot new questions:** add keywords to `KEYWORDS` in `src/services/chatbot.ts`, and an answer in `src/i18n/en.ts` under `chat.a`.
-- **Change the colours:** edit `src/theme.ts`.
+- **Refresh the real data** (community clubs, hawker centres, parks): in `apps/expo`, run `npm run update:data`. It downloads the latest lists from data.gov.sg and updates `src/data/coolSpots.json`. Libraries, malls and water points are hand-made samples. Edit them in the same file using the same fields (`id, name, type, cooling, latitude, longitude, note`). `cooling` must be `aircon`, `shaded` or `green`. **Then copy the file** to `apps/ios/CoolDrift/Resources/coolSpots.json` so the iOS app gets it too.
+- **Design and animations (Expo):** colours, shadows and corner sizes are all in `apps/expo/src/theme.ts`. To make something animate in, wrap it in `<FadeIn delay={200}>`. For a white box, use `<Card>`. For a button that squishes, use `<ScalePressable>`. All animations switch off automatically if the phone has **Reduce Motion** turned on (some seniors feel dizzy with moving screens).
+- **Design (iOS):** colours are in `apps/ios/CoolDrift/App/Theme.swift`.
+- **Share hot spot reports between phones:** fill in `syncReportToBackend()` and `fetchSharedReports()` at the bottom of `apps/expo/src/services/reports.ts`, and `syncToBackend()` / `fetchShared()` in `apps/ios/CoolDrift/Services/ReportStore.swift` (e.g. with Firebase). ⚠️ This needs a Firebase project and API key, so check with the team first.
+- **Fix a translation:** edit `apps/expo/src/i18n/zh.ts`, `ms.ts` or `ta.ts`. The Chinese, Malay and Tamil text are **placeholder translations**, so please ask a native speaker to check them. Missing lines show in English. The iOS app has the same text in `apps/ios/CoolDrift/Resources/Strings/*.json` (same keys, e.g. `"risk.low"`), so update those too.
+- **Teach the chatbot new questions:** add keywords to `KEYWORDS` in `apps/expo/src/services/chatbot.ts` (and `keywords` in `apps/ios/CoolDrift/Services/Chatbot.swift`), and an answer under `chat.a` in the translations.
 
 ## 7. Libraries used (all free)
-Expo SDK 57, Expo Router, react-native-maps, expo-location, expo-notifications, expo-speech, expo-background-task, AsyncStorage, i18n-js, expo-localization. On computers: react-native-web, Leaflet and react-leaflet.
+**Expo app:** Expo SDK 57, Expo Router, react-native-maps, expo-location, expo-notifications, expo-speech, expo-background-task, AsyncStorage, i18n-js, expo-localization. On computers: react-native-web, Leaflet and react-leaflet.
+
+**iOS app:** only Apple's own frameworks (SwiftUI, MapKit, Core Location, UserNotifications, BackgroundTasks, AVFoundation). No third-party libraries. XcodeGen is used to generate the Xcode project.
 
 **Data credits:** Contains information from *Community Club / PAssion WaVe Outlet* (People's Association), *Hawker Centres* (NEA) and *Parks* (NParks), accessed from data.gov.sg and made available under the [Singapore Open Data Licence v1.0](https://data.gov.sg/open-data-licence).
 
@@ -242,6 +337,7 @@ Expo SDK 57, Expo Router, react-native-maps, expo-location, expo-notifications, 
 - Libraries, malls and water points are **approximate sample data**. Community clubs, hawker centres and parks are real.
 - Community clubs are counted as "Air-con" because they have air-conditioned lobbies and halls, but opening hours vary.
 - iOS controls when background checks run, so alerts are most reliable while the app is open.
-- The map heat layer uses circles (they work on both iPhone and Android in Expo Go) instead of a true blurred heat map, which needs Google Maps.
+- The map heat layer uses circles (they work on iPhone and Android) instead of a true blurred heat map, which needs Google Maps.
 - The text-to-speech voices for Tamil and Malay depend on what the phone has installed.
 - Desktop version: reminders and alerts only work while the browser tab is open. OpenStreetMap's free map server is meant for light use, so a real launch with many users should switch to a paid or self-hosted tile server (ask first).
+- The cool spots and translations are copied into the iOS app, so they must be updated in both places.
