@@ -1,0 +1,52 @@
+# project.yml — describes the Xcode project. CoolDrift.xcodeproj is generated from it.
+# After adding/removing files or changing settings here, run:  xcodegen generate
+# (Install XcodeGen with:  brew install xcodegen)
+
+name: CoolDrift
+options:
+  bundleIdPrefix: com.cooldrift
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+
+targets:
+  CoolDrift:
+    type: application
+    platform: iOS
+    sources:
+      - CoolDrift
+    info:
+      path: CoolDrift/Info.plist
+      properties:
+        CFBundleDisplayName: CoolDrift
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UILaunchScreen:
+          UIColorName: AccentColor
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        NSLocationWhenInUseUsageDescription: CoolDrift uses your location on this phone only, to show heat risk and cool places near you.
+        UIBackgroundModes:
+          - fetch
+        BGTaskSchedulerPermittedIdentifiers:
+          - com.cooldrift.app.heatcheck
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.cooldrift.app
+        MARKETING_VERSION: 1.0.0
+        CURRENT_PROJECT_VERSION: 1
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SWIFT_VERSION: "5.0"
+        SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+        SWIFT_APPROACHABLE_CONCURRENCY: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        CODE_SIGN_STYLE: Automatic
+        ENABLE_PREVIEWS: YES
