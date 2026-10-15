@@ -12,6 +12,7 @@ import { answer } from '../../services/chatbot';
 import { speak } from '../../services/speech';
 import { colors, fontSize } from '../../theme';
 import { useIsDesktop } from '../../utils/useIsDesktop';
+import TabBarSafeArea from '../../components/ui/TabBarSafeArea';
 
 type Message = { id: string; from: 'user' | 'bot'; text: string };
 
@@ -70,7 +71,7 @@ export default function ChatScreen() {
       </ScrollView>
 
       {/* Typing box */}
-      <View style={[styles.inputRow, styles.centred]}>
+      <TabBarSafeArea style={[styles.inputRow, styles.centred]}>
         <TextInput
           value={input}
           onChangeText={setInput}
@@ -84,7 +85,7 @@ export default function ChatScreen() {
         <Pressable onPress={() => ask(input)} style={styles.send} accessibilityRole="button" accessibilityLabel={t('chat.send')}>
           <Ionicons name="send" size={26} color={colors.white} />
         </Pressable>
-      </View>
+      </TabBarSafeArea>
     </KeyboardAvoidingView>
   );
 }

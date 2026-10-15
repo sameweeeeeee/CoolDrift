@@ -22,6 +22,7 @@ import { speak } from '../../services/speech';
 import { formatDistance } from '../../utils/geo';
 import { formatTime, spokenSummary } from '../../utils/summary';
 import { useIsDesktop } from '../../utils/useIsDesktop';
+import { useTabBarSpace } from '../../utils/useTabBarSpace';
 import { colors, riskColor } from '../../theme';
 
 /** Opens the Routes tab with this place as the destination. */
@@ -36,6 +37,7 @@ export default function HomeScreen() {
   const { settings } = useSettings();
   const { reading, risk, loading, error, location, refresh } = useHeat();
   const isDesktop = useIsDesktop(); // computer: two columns side by side
+  const tabSpace = useTabBarSpace(); // room for the floating tab bar
 
   // First load: show a spinner.
   if (!risk && loading) {
@@ -78,7 +80,8 @@ export default function HomeScreen() {
 
   return (
     <ScrollView
-      contentContainerStyle={styles.page}
+      contentInsetAdjustmentBehavior="automatic"
+      contentContainerStyle={[styles.page, { paddingBottom: 40 + tabSpace }]}
       refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} tintColor={colors.primary} />}
     >
       <StatusBanners />
@@ -178,6 +181,7 @@ export default function HomeScreen() {
 /** Senior mode: one huge meter, one huge voice button, one "take me there" button. */
 function SeniorHome(props: { risk: RiskLevel; spotName: string; spotDist: string; onSpeak: () => void; onGo: () => void }) {
   const { t, tList } = useT();
+  const tabSpace = useTabBarSpace();
   const spoke = useRef(false);
 
   // Read the advice aloud once when the screen opens.
@@ -189,7 +193,7 @@ function SeniorHome(props: { risk: RiskLevel; spotName: string; spotDist: string
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <ScrollView contentContainerStyle={styles.page}>
+    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={[styles.page, { paddingBottom: 40 + tabSpace }]}>
       <StatusBanners />
       <RiskMeter risk={props.risk} huge />
       <FadeIn delay={120}>

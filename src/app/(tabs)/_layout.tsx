@@ -1,22 +1,21 @@
-// (tabs)/_layout.tsx — the 4 main tabs at the bottom of the screen,
-// plus the ⚙️ settings button at the top right.
-// On wide screens (computers) the tabs move to the left side.
+// (tabs)/_layout.tsx — the 4 main tabs, plus the ⚙️ settings button at the top right.
+// Phones (Android + phone browsers): a floating frosted-glass bar at the bottom (GlassTabBar).
+// Wide screens (computers): the tabs move to the left side.
+// iPhones use _layout.ios.tsx instead, with the real iOS Liquid Glass tab bar.
 
 import React, { useEffect, useState } from 'react';
 import { Animated, ColorValue, Pressable, StyleSheet, View } from 'react-native';
 import { Tabs, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import GlassTabBar from '../../components/ui/GlassTabBar';
 import HeaderBackground from '../../components/ui/HeaderBackground';
 import { useSettings, useT } from '../../context/SettingsContext';
 import { colors, radius } from '../../theme';
 import { NATIVE_DRIVER, useReducedMotion } from '../../utils/motion';
 import { useIsDesktop } from '../../utils/useIsDesktop';
 
-/**
- * A tab icon that grows a little and gets a soft green "pill" behind it when selected.
- * (On computers the side bar already highlights the tab, so we skip the pill there.)
- */
-function TabIcon({ name, color, focused, pill }: { name: keyof typeof Ionicons.glyphMap; color: ColorValue; focused: boolean; pill: boolean }) {
+/** A tab icon that grows a little when selected. */
+function TabIcon({ name, color, focused }: { name: keyof typeof Ionicons.glyphMap; color: ColorValue; focused: boolean }) {
   const reduced = useReducedMotion();
   const [active] = useState(() => new Animated.Value(focused ? 1 : 0));
 
@@ -28,14 +27,6 @@ function TabIcon({ name, color, focused, pill }: { name: keyof typeof Ionicons.g
 
   return (
     <View style={styles.iconBox}>
-      {pill && (
-        <Animated.View
-          style={[
-            styles.pill,
-            { opacity: active, transform: [{ scaleX: active.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }) }] },
-          ]}
-        />
-      )}
       <Animated.View style={{ transform: [{ scale: active.interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] }) }] }}>
         <Ionicons name={name} size={26} color={color as string} />
       </Animated.View>
@@ -63,11 +54,12 @@ export default function TabsLayout() {
 
   const icon = (name: keyof typeof Ionicons.glyphMap) =>
     function Icon({ color, focused }: { color: ColorValue; focused: boolean }) {
-      return <TabIcon name={name} color={color} focused={focused} pill={!isDesktop} />;
+      return <TabIcon name={name} color={color} focused={focused} />;
     };
 
   return (
     <Tabs
+      tabBar={isDesktop ? undefined : (props) => <GlassTabBar {...props} />}
       screenOptions={{
         headerBackground: HeaderBackground,
         headerTintColor: colors.white,
@@ -79,9 +71,7 @@ export default function TabsLayout() {
         tabBarLabelStyle: { fontSize: 13 * Math.min(textScale, 1.2), fontWeight: '700' },
         tabBarPosition: isDesktop ? 'left' : 'bottom',
         tabBarVariant: isDesktop ? 'material' : 'uikit', // 'material' shows icon + label in a side bar
-        tabBarStyle: isDesktop
-          ? { minWidth: 190, paddingTop: 12, borderRightWidth: 0, boxShadow: '2px 0px 16px rgba(16,70,40,0.08)' }
-          : { minHeight: 76, paddingTop: 8, borderTopWidth: 0, boxShadow: '0px -4px 16px rgba(16,70,40,0.08)' },
+        tabBarStyle: { minWidth: 190, paddingTop: 12, borderRightWidth: 0, boxShadow: '2px 0px 16px rgba(16,70,40,0.08)' }, // computer side bar only
         sceneStyle: { backgroundColor: colors.background },
       }}
     >
@@ -94,8 +84,7 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
-  iconBox: { alignItems: 'center', justifyContent: 'center', width: 64, height: 34 },
-  pill: { position: 'absolute', width: 60, height: 34, borderRadius: radius.pill, backgroundColor: colors.primaryLight },
+  iconBox: { alignItems: 'center', justifyContent: 'center', width: 64, height: 30 },
   settingsButton: {
     marginHorizontal: 12,
     width: 44,

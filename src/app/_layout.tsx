@@ -3,8 +3,9 @@
 // sets up notifications, and defines the screens: the tabs + Settings.
 
 import React, { useEffect } from 'react';
-import { Vibration } from 'react-native';
-import { Stack } from 'expo-router';
+import { Platform, Pressable, StyleSheet, Vibration } from 'react-native';
+import { Stack, router, usePathname } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { SettingsProvider, useSettings, useT } from '../context/SettingsContext';
 import { HeatProvider } from '../context/HeatContext';
@@ -48,6 +49,27 @@ export default function RootLayout() {
 
 function Screens() {
   const { t } = useT();
+  const pathname = usePathname(); // e.g. "/" or "/spots"
+
+  // iPhone only: the real iOS tabs have no title bar, so this Stack shows it instead,
+  // with the title of whichever tab is open.
+  const tabTitles: Record<string, string> = {
+    '/spots': t('tabs.spots'),
+    '/routes': t('tabs.routes'),
+    '/chat': t('tabs.chat'),
+  };
+  const settingsButton = () => (
+    <Pressable
+      onPress={() => router.push('/settings')}
+      accessibilityRole="button"
+      accessibilityLabel={t('common.settings')}
+      hitSlop={12}
+      style={styles.settingsButton}
+    >
+      <Ionicons name="settings-sharp" size={26} color={colors.white} />
+    </Pressable>
+  );
+
   return (
     <Stack
       screenOptions={{
@@ -58,8 +80,30 @@ function Screens() {
         contentStyle: { backgroundColor: colors.background },
       }}
     >
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="(tabs)"
+        options={
+          Platform.OS === 'ios'
+            ? {
+                title: tabTitles[pathname] ?? 'CoolDrift',
+                headerTitleStyle: { fontWeight: '800', fontSize: 22 },
+                headerRight: settingsButton,
+              }
+            : { headerShown: false } // the tabs draw their own title bar
+        }
+      />
       <Stack.Screen name="settings" options={{ title: t('common.settings'), presentation: 'modal' }} />
     </Stack>
   );
 }
+
+const styles = StyleSheet.create({
+  settingsButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+  },
+});

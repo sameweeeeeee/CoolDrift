@@ -18,6 +18,8 @@ import { CoolSpotWithDistance, SPOT_ICON, SpotType, spotsByDistance } from '../.
 import { HotLevel, HotSpotReport, addReport, loadReports } from '../../services/reports';
 import { LatLng, formatDistance } from '../../utils/geo';
 import { useIsDesktop } from '../../utils/useIsDesktop';
+import { useTabBarSpace } from '../../utils/useTabBarSpace';
+import TabBarSafeArea from '../../components/ui/TabBarSafeArea';
 import { colors, coolingColor } from '../../theme';
 
 // Button colours for "how hot": dark enough for white text to be readable.
@@ -34,6 +36,7 @@ export default function SpotsScreen() {
   const { t } = useT();
   const { location } = useHeat();
   const isDesktop = useIsDesktop();
+  const tabSpace = useTabBarSpace(); // room for the floating tab bar
 
   const [filter, setFilter] = useState<SpotType | null>(null);
   const [reports, setReports] = useState<HotSpotReport[]>([]);
@@ -167,7 +170,8 @@ export default function SpotsScreen() {
       style={{ flex: 1 }}
       data={spots}
       keyExtractor={(s) => s.id}
-      contentContainerStyle={{ padding: 12, gap: 10 }}
+      contentInsetAdjustmentBehavior="automatic"
+      contentContainerStyle={{ padding: 12, gap: 10, paddingBottom: 12 + tabSpace }}
       ListHeaderComponent={
         <View style={{ gap: 8 }}>
           {isDesktop && (
@@ -212,7 +216,12 @@ export default function SpotsScreen() {
   return (
     <View style={{ flex: 1, flexDirection: isDesktop ? 'row' : 'column' }}>
       {map}
-      <View style={isDesktop ? styles.sideDesktop : { flex: 1 }}>{side}</View>
+      {report.step === 'none' ? (
+        <View style={isDesktop ? styles.sideDesktop : { flex: 1 }}>{side}</View>
+      ) : (
+        // The report panels don't scroll, so keep their buttons above the tab bar.
+        <TabBarSafeArea style={isDesktop ? styles.sideDesktop : { flex: 1, backgroundColor: colors.white }}>{side}</TabBarSafeArea>
+      )}
     </View>
   );
 }

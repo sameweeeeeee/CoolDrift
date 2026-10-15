@@ -17,6 +17,7 @@ import { useT } from '../../context/SettingsContext';
 import { CoolRoutePlan, TravelMode, planCoolRoute } from '../../services/routing';
 import { LatLng, formatDistance, formatDuration } from '../../utils/geo';
 import { useIsDesktop } from '../../utils/useIsDesktop';
+import { useTabBarSpace } from '../../utils/useTabBarSpace';
 import { colors } from '../../theme';
 
 type Destination = { coords: LatLng; name: string };
@@ -25,6 +26,7 @@ export default function RoutesScreen() {
   const { t } = useT();
   const { location, risk } = useHeat();
   const isDesktop = useIsDesktop();
+  const tabSpace = useTabBarSpace(); // room for the floating tab bar
   const params = useLocalSearchParams<{ lat?: string; lng?: string; name?: string }>();
 
   const [dest, setDest] = useState<Destination | null>(null);
@@ -113,7 +115,11 @@ export default function RoutesScreen() {
       </View>
 
       {/* ---------- Side / bottom panel ---------- */}
-      <ScrollView style={isDesktop ? styles.panelDesktop : styles.panel} contentContainerStyle={{ gap: 10, padding: 14 }}>
+      <ScrollView
+        style={isDesktop ? styles.panelDesktop : styles.panel}
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={{ gap: 10, padding: 14, paddingBottom: 14 + tabSpace }}
+      >
         {dest && (
           <AppText size="large" bold numberOfLines={isDesktop ? 2 : 1}>
             {t('routes.to', { name: dest.name })}
